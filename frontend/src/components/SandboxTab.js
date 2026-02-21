@@ -280,9 +280,12 @@ export default function SandboxTab({ project }) {
   }, [messages, sessionId, saveToStorage]);
 
   /* Init session */
-  useEffect(() => { initSession(); }, [initSession, project.project_id]);
-
-  /* Style injection (once) */
+  /* Init session */
+  useEffect(() => { 
+    if (project.project_id) {
+      initSession(); 
+    }
+  }, []);
   useEffect(() => {
     if (document.getElementById("sb-voice-styles")) return;
     const s = document.createElement("style");
