@@ -184,6 +184,13 @@ export default function SandboxTab({ project }) {
   /* Scroll to bottom on new messages */
   useEffect(() => { messagesEnd.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, streamingText]);
 
+  /* Auto-save messages to storage */
+  useEffect(() => {
+    if (sessionId && messages.length > 0) {
+      saveToStorage(sessionId, messages);
+    }
+  }, [messages, sessionId, saveToStorage]);
+
   /* Init session */
   useEffect(() => { initSession(); }, [project.project_id]);
 
