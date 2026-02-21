@@ -612,31 +612,62 @@ function sendText(txt){
 }
 function sendFb(mid,v){fetch(API+'/widget/feedback',{method:'POST',headers:{'Content-Type':'application/json','x-project-key':PK},body:JSON.stringify({message_id:mid,feedback:v})}).catch(function(){});}
 
-/* ── TTS ── */
+/* ── TTS (sentence-chunked with queue) ── */
 function speakTTS(text){
-  if(!('speechSynthesis' in window)){setVState('idle');return;}
-  stopTTS();
+  if(!('speechSynthesis' in window)||!VOICE_READY){setVState('idle');return;}
+  stopTTS(); // Clear any existing queue
   viBot.textContent='';
-  var clean=text.replace(/[#*_`>\[\]]/g,'').slice(0,600);
-  var u=new SpeechSynthesisUtterance(clean);
-  CURR_UTT=u;u.rate=1.05;u.pitch=1;
+  
+  var clean=text.replace(/[#*_`>\[\]]/g,'');
+  var sentences=splitSentences(clean);
+  if(sentences.length===0){setVState('idle');return;}
+  
+  TTS_QUEUE=sentences.slice();
+  TTS_ACTIVE=true;
   setVState('speaking');
-  u.onend=function(){
+  
+  /* Start instant interrupt watcher (no delay) */
+  if(!IS_IFRAME&&!MUTED)startInterruptWatcher();
+  
+  speakNextSentence();
+}
+
+function speakNextSentence(){
+  if(!TTS_ACTIVE||TTS_QUEUE.length===0){
+    TTS_ACTIVE=false;
     CURR_UTT=null;
     if(!VOICE)return;
     setVState('idle');
     /* Auto-restart loop only in production (not preview iframe) */
     if(!MUTED&&!IS_IFRAME)setTimeout(function(){if(VOICE&&VSTATE==='idle')startListening();},650);
-  };
-  u.onerror=function(){CURR_UTT=null;if(VOICE)setVState('idle');};
-  window.speechSynthesis.speak(u);
-  /* Background interrupt watcher — non-iframe production only */
-  if(!IS_IFRAME&&!MUTED){
-    setTimeout(function(){if(VSTATE==='speaking')startInterruptWatcher();},400);
+    return;
   }
+  
+  var sentence=TTS_QUEUE.shift();
+  var u=new SpeechSynthesisUtterance(sentence);
+  if(SELECTED_VOICE)u.voice=SELECTED_VOICE;
+  CURR_UTT=u;
+  u.rate=1.05;
+  u.pitch=1;
+  
+  u.onend=function(){
+    if(!TTS_ACTIVE)return; // Queue was cancelled
+    speakNextSentence(); // Continue to next sentence
+  };
+  
+  u.onerror=function(){
+    TTS_ACTIVE=false;
+    CURR_UTT=null;
+    if(VOICE)setVState('idle');
+  };
+  
+  window.speechSynthesis.speak(u);
 }
+
 function stopTTS(){
   stopInterruptWatcher();
+  TTS_ACTIVE=false;
+  TTS_QUEUE=[];
   if(CURR_UTT){CURR_UTT.onend=null;CURR_UTT.onerror=null;CURR_UTT=null;}
   if('speechSynthesis' in window)window.speechSynthesis.cancel();
 }
