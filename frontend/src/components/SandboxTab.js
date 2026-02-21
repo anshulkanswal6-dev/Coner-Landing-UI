@@ -247,7 +247,7 @@ export default function SandboxTab({ project }) {
     initSession();
     
     toast.success("Started new chat");
-  }, [clearStorage, initSession, closeVoice]);
+  }, [clearStorage, initSession]);
 
   /* ── Switch memory mode ── */
   const switchMemoryMode = useCallback((newMode) => {
