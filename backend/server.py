@@ -56,6 +56,7 @@ class ProjectUpdate(BaseModel):
     welcome_message: Optional[str] = None
     primary_color: Optional[str] = None
     status: Optional[str] = None
+    whitelisted_domains: Optional[List[str]] = None
 
 class GoldenRulesUpdate(BaseModel):
     preset_rules: Optional[Dict[str, bool]] = None
