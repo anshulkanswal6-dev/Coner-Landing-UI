@@ -433,6 +433,41 @@ function init(){
 }
 init();
 
+/* ── Intelligent Voice Selection ── */
+function selectBestVoice(){
+  if(!('speechSynthesis' in window))return null;
+  var voices=window.speechSynthesis.getVoices();
+  if(!voices||voices.length===0)return null;
+  
+  /* Tier 1: Microsoft premium voices */
+  var ms=['aria','guy','jenny'];
+  for(var i=0;i<ms.length;i++){
+    var v=voices.find(function(x){return x.name.toLowerCase().includes(ms[i]);});
+    if(v)return v;
+  }
+  
+  /* Tier 2: Google natural */
+  var goog=voices.find(function(x){return x.name.toLowerCase().includes('google')&&(x.name.toLowerCase().includes('natural')||x.name.toLowerCase().includes('neural'));});
+  if(goog)return goog;
+  
+  /* Tier 3: Any Natural/Neural */
+  var nat=voices.find(function(x){return x.name.toLowerCase().includes('natural')||x.name.toLowerCase().includes('neural');});
+  if(nat)return nat;
+  
+  /* Tier 4: Default */
+  return voices[0]||null;
+}
+
+function initVoice(){
+  SELECTED_VOICE=selectBestVoice();
+  VOICE_READY=true;
+}
+
+if('speechSynthesis' in window){
+  if(window.speechSynthesis.getVoices().length>0)initVoice();
+  else window.speechSynthesis.onvoiceschanged=initVoice;
+}
+
 /* ── Render message ── */
 function renderMsg(role,text,msgId,silent){
   MSGS.push({role:role,text:text,id:msgId});
