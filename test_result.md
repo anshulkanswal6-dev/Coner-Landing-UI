@@ -208,10 +208,6 @@ metadata:
 test_plan:
   current_focus:
     - "Voice Mode - Preview Safe (Iframe)"
-    - "Voice Mode - Unified History"
-    - "Voice Mode - Interruptible AI Speech"
-    - "Voice Mode - Duplicate Prevention"
-    - "Voice Mode - Launcher Color Fix"
   stuck_tasks:
     - "Voice Mode - Preview Safe (Iframe)"
   test_all: false
