@@ -260,6 +260,7 @@ async def create_project(data: ProjectCreate, user: dict = Depends(get_current_u
             "be_concise": True, "ask_before_assuming": False
         }, "custom_rules": []},
         "agent_mode": "support",
+        "whitelisted_domains": [],
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.projects.insert_one(project)
