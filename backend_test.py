@@ -3,15 +3,16 @@ import sys
 import json
 from datetime import datetime
 
-class EmergentPulseAPITester:
-    def __init__(self, base_url="https://business-ai-platform-1.preview.emergentagent.com"):
+# Test credentials from review request
+SESSION_TOKEN = "test_session_token_001"
+API_KEY = "ep_efabd995e18a4096b89e68260b90cb74"
+PROJECT_ID = "proj_9d10065d69634f87"
+
+class VoiceIslandAPITester:
+    def __init__(self, base_url="https://business-ai-platform-1.preview.emergentagent.com/api"):
         self.base_url = base_url
-        self.session_token = "test_session_token_001"  # From review_request
-        self.api_key = "ep_efabd995e18a4096b89e68260b90cb74"  # From review_request
-        self.project_id = "proj_9d10065d69634f87"  # From review_request
         self.tests_run = 0
         self.tests_passed = 0
-        self.session_id = None
 
     def run_test(self, name, method, endpoint, expected_status, data=None, headers=None, use_api_key=False):
         """Run a single API test"""
