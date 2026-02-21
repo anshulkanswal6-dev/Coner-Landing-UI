@@ -322,11 +322,12 @@ export default function SandboxTab({ project }) {
   /* ── Stop listening ── */
   const stopListening = useCallback(() => {
     clearTimeout(silenceTimer.current);
+    stopMicVisualization();
     if (recognitionRef.current) {
       try { recognitionRef.current.stop(); } catch {}
       recognitionRef.current = null;
     }
-  }, []);
+  }, [stopMicVisualization]);
 
   /* ── Send text (streaming) ── */
   const sendText = useCallback(async (txt) => {
