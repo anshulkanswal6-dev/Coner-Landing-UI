@@ -357,6 +357,7 @@ export default function SandboxTab({ project }) {
         credentials: "include"
       });
       const reader  = resp.body.getReader();
+      sseReaderRef.current = reader; // Track for cleanup
       const decoder = new TextDecoder();
       let full = "", msgId = null;
 
@@ -378,41 +379,25 @@ export default function SandboxTab({ project }) {
         }
       }
 
+      sseReaderRef.current = null;
       setStreamingText("");
       setMessages(prev => [...prev, { role: "assistant", content: full, id: msgId, source: "rag" }]);
 
       if (voiceModeRef.current && full) {
-        if ("speechSynthesis" in window) {
-          stopTTS();
-          setBotTxt("");
-          const clean = full.replace(/[#*_`>\[\]]/g, "").slice(0, 600);
-          const u = new SpeechSynthesisUtterance(clean);
-          utteranceRef.current = u;
-          u.rate = 1.05; u.pitch = 1;
-          setVState("speaking");
-          u.onend = () => {
-            utteranceRef.current = null;
-            if (!voiceModeRef.current) return;
-            setVState("idle");
-            // SANDBOX IS ALWAYS PREVIEW: no auto-restart, manual mic click only
-          };
-          u.onerror = () => { utteranceRef.current = null; if (voiceModeRef.current) setVState("idle"); };
-          window.speechSynthesis.speak(u);
-        } else {
-          setVState("idle");
-        }
+        speakTTSChunked(full);
       } else if (voiceModeRef.current) {
         setVState("idle");
       }
 
     } catch {
+      sseReaderRef.current = null;
       setStreamingText("");
       toast.error("Failed to get response");
       if (voiceModeRef.current) setVState("idle");
     } finally {
       setSending(false); sendingRef.current = false;
     }
-  }, [project.project_id, setVState, stopTTS]);
+  }, [project.project_id, setVState]);
 
   /* ── STT ── */
   function startListeningInner() {
