@@ -399,6 +399,61 @@ export default function SandboxTab({ project }) {
     }
   }, [project.project_id, setVState]);
 
+  /* ── TTS (sentence-chunked with queue) ── */
+  const speakTTSChunked = useCallback((text) => {
+    if (!('speechSynthesis' in window) || !voiceReady.current) {
+      setVState("idle");
+      return;
+    }
+    
+    stopTTS();
+    setBotTxt("");
+    
+    const clean = text.replace(/[#*_`>\[\]]/g, '');
+    const sentences = splitSentences(clean);
+    if (sentences.length === 0) {
+      setVState("idle");
+      return;
+    }
+    
+    ttsQueue.current = sentences.slice();
+    ttsActive.current = true;
+    setVState("speaking");
+    
+    speakNextSentence();
+  }, [setVState, stopTTS]);
+
+  const speakNextSentence = useCallback(() => {
+    if (!ttsActive.current || ttsQueue.current.length === 0) {
+      ttsActive.current = false;
+      utteranceRef.current = null;
+      if (!voiceModeRef.current) return;
+      setVState("idle");
+      // SANDBOX IS ALWAYS PREVIEW: no auto-restart, manual mic click only
+      return;
+    }
+    
+    const sentence = ttsQueue.current.shift();
+    const u = new SpeechSynthesisUtterance(sentence);
+    if (selectedVoice.current) u.voice = selectedVoice.current;
+    utteranceRef.current = u;
+    u.rate = 1.05;
+    u.pitch = 1;
+    
+    u.onend = () => {
+      if (!ttsActive.current) return; // Queue was cancelled
+      speakNextSentence(); // Continue to next sentence
+    };
+    
+    u.onerror = () => {
+      ttsActive.current = false;
+      utteranceRef.current = null;
+      if (voiceModeRef.current) setVState("idle");
+    };
+    
+    window.speechSynthesis.speak(u);
+  }, [setVState]);
+
   /* ── STT ── */
   function startListeningInner() {
     if (mutedRef.current || sendingRef.current) return;
