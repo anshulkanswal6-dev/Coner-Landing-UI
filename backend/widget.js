@@ -709,6 +709,54 @@ function setVState(s){
   viLbl.textContent=(MUTED&&s==='idle')?'Muted \u2014 tap orb to speak':(map[s]||'');
 }
 
+/* ── Web Audio API for real mic visualization ── */
+function setupMicVisualization(){
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)return;
+  navigator.mediaDevices.getUserMedia({audio:true})
+    .then(function(stream){
+      MIC_STREAM=stream;
+      AUDIO_CTX=new(window.AudioContext||window.webkitAudioContext)();
+      ANALYSER=AUDIO_CTX.createAnalyser();
+      ANALYSER.fftSize=256;
+      var src=AUDIO_CTX.createMediaStreamSource(stream);
+      src.connect(ANALYSER);
+      animateMicBars();
+    })
+    .catch(function(){/* Fallback to CSS animation if mic denied */});
+}
+
+function animateMicBars(){
+  if(!ANALYSER||VSTATE!=='listening'||!VOICE){return;}
+  var dataArr=new Uint8Array(ANALYSER.frequencyBinCount);
+  ANALYSER.getByteFrequencyData(dataArr);
+  
+  /* Calculate RMS */
+  var sum=0;
+  for(var i=0;i<dataArr.length;i++)sum+=dataArr[i]*dataArr[i];
+  var rms=Math.sqrt(sum/dataArr.length);
+  var amp=Math.min(rms/128,1); // Normalize 0-1
+  
+  /* Update 7 bars — center highest */
+  var bars=document.querySelectorAll('.ep-vi-bar');
+  if(bars.length===7){
+    var heights=[amp*0.5,amp*0.75,amp*0.95,amp,amp*0.95,amp*0.75,amp*0.5];
+    for(var j=0;j<7;j++){
+      var h=3+heights[j]*14; // 3px min, 17px max
+      bars[j].style.height=h+'px';
+      bars[j].style.animation='none'; // Disable CSS animation
+    }
+  }
+  
+  ANIM_FRAME=requestAnimationFrame(animateMicBars);
+}
+
+function stopMicVisualization(){
+  if(ANIM_FRAME){cancelAnimationFrame(ANIM_FRAME);ANIM_FRAME=null;}
+  if(MIC_STREAM){MIC_STREAM.getTracks().forEach(function(t){t.stop();});MIC_STREAM=null;}
+  if(AUDIO_CTX){AUDIO_CTX.close();AUDIO_CTX=null;}
+  ANALYSER=null;
+}
+
 /* ── STT ── */
 function startListening(){
   if(MUTED||SENDING)return;
