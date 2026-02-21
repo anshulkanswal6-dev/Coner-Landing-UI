@@ -834,3 +834,76 @@ async def startup():
 @app.on_event("shutdown")
 async def shutdown():
     client.close()
+
+# ─── Document Parser Functions ───
+import io
+from PyPDF2 import PdfReader
+from docx import Document as DocxDocument
+from pptx import Presentation
+from openpyxl import load_workbook
+
+async def extract_text_from_pdf(file_bytes: bytes) -> str:
+    """Extract text from PDF"""
+    try:
+        pdf = PdfReader(io.BytesIO(file_bytes))
+        text = ""
+        for page in pdf.pages:
+            text += page.extract_text() + "\n"
+        return text.strip()
+    except Exception as e:
+        raise Exception(f"PDF extraction failed: {str(e)}")
+
+async def extract_text_from_docx(file_bytes: bytes) -> str:
+    """Extract text from DOCX"""
+    try:
+        doc = DocxDocument(io.BytesIO(file_bytes))
+        text = "\n".join([para.text for para in doc.paragraphs if para.text.strip()])
+        return text.strip()
+    except Exception as e:
+        raise Exception(f"DOCX extraction failed: {str(e)}")
+
+async def extract_text_from_pptx(file_bytes: bytes) -> str:
+    """Extract text from PPTX"""
+    try:
+        prs = Presentation(io.BytesIO(file_bytes))
+        text = ""
+        for slide in prs.slides:
+            for shape in slide.shapes:
+                if hasattr(shape, "text"):
+                    text += shape.text + "\n"
+        return text.strip()
+    except Exception as e:
+        raise Exception(f"PPTX extraction failed: {str(e)}")
+
+async def extract_text_from_xlsx(file_bytes: bytes) -> str:
+    """Extract text from XLSX"""
+    try:
+        wb = load_workbook(io.BytesIO(file_bytes), data_only=True)
+        text = ""
+        for sheet_name in wb.sheetnames:
+            sheet = wb[sheet_name]
+            text += f"\n\n--- Sheet: {sheet_name} ---\n"
+            for row in sheet.iter_rows(values_only=True):
+                row_text = " | ".join([str(cell) if cell is not None else "" for cell in row])
+                if row_text.strip():
+                    text += row_text + "\n"
+        return text.strip()
+    except Exception as e:
+        raise Exception(f"XLSX extraction failed: {str(e)}")
+
+async def extract_text_from_file(file_bytes: bytes, filename: str) -> str:
+    """Route to appropriate parser based on file extension"""
+    ext = filename.lower().split('.')[-1]
+    
+    if ext == 'pdf':
+        return await extract_text_from_pdf(file_bytes)
+    elif ext == 'docx':
+        return await extract_text_from_docx(file_bytes)
+    elif ext == 'pptx':
+        return await extract_text_from_pptx(file_bytes)
+    elif ext in ['xlsx', 'xls']:
+        return await extract_text_from_xlsx(file_bytes)
+    elif ext == 'txt':
+        return file_bytes.decode('utf-8', errors='ignore')
+    else:
+        raise Exception(f"Unsupported file type: {ext}")
