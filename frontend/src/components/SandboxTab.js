@@ -41,6 +41,86 @@ function fmtMd(t) {
     .replace(/\n/g, "<br>");
 }
 
+/* ── Smart Sentence Splitter ── */
+function splitSentences(text) {
+  if (!text) return [];
+  /* Replace common abbreviations temporarily */
+  let t = text
+    .replace(/\bDr\./gi, 'Dr<DOT>')
+    .replace(/\bMr\./gi, 'Mr<DOT>')
+    .replace(/\bMrs\./gi, 'Mrs<DOT>')
+    .replace(/\bMs\./gi, 'Ms<DOT>')
+    .replace(/\bProf\./gi, 'Prof<DOT>')
+    .replace(/\bInc\./gi, 'Inc<DOT>')
+    .replace(/\bLtd\./gi, 'Ltd<DOT>')
+    .replace(/\bCorp\./gi, 'Corp<DOT>')
+    .replace(/\bSr\./gi, 'Sr<DOT>')
+    .replace(/\bJr\./gi, 'Jr<DOT>')
+    .replace(/\b([A-Z])\./g, '$1<DOT>');
+  
+  /* Split on sentence boundaries */
+  const raw = t.split(/([.!?]+\s+)/);
+  const sentences = [];
+  let curr = '';
+  
+  for (let i = 0; i < raw.length; i++) {
+    curr += raw[i];
+    if (/[.!?]/.test(raw[i]) && curr.trim().length > 0) {
+      sentences.push(curr.trim().replace(/<DOT>/g, '.'));
+      curr = '';
+    }
+  }
+  if (curr.trim()) sentences.push(curr.trim().replace(/<DOT>/g, '.'));
+  
+  /* If no clean sentences, chunk by ~150 chars */
+  if (sentences.length === 0 || sentences.join('').length < text.length * 0.5) {
+    const chunks = [];
+    let chunk = '';
+    const words = text.split(/\s+/);
+    for (const word of words) {
+      chunk += word + ' ';
+      if (chunk.length >= 150) {
+        chunks.push(chunk.trim());
+        chunk = '';
+      }
+    }
+    if (chunk.trim()) chunks.push(chunk.trim());
+    return chunks;
+  }
+  
+  return sentences.filter(s => s.length > 0);
+}
+
+/* ── Intelligent Voice Selection ── */
+function selectBestVoice() {
+  if (!('speechSynthesis' in window)) return null;
+  const voices = window.speechSynthesis.getVoices();
+  if (!voices || voices.length === 0) return null;
+  
+  /* Tier 1: Microsoft premium voices */
+  const msNames = ['aria', 'guy', 'jenny'];
+  for (const name of msNames) {
+    const v = voices.find(x => x.name.toLowerCase().includes(name));
+    if (v) return v;
+  }
+  
+  /* Tier 2: Google natural */
+  const goog = voices.find(x => 
+    x.name.toLowerCase().includes('google') && 
+    (x.name.toLowerCase().includes('natural') || x.name.toLowerCase().includes('neural'))
+  );
+  if (goog) return goog;
+  
+  /* Tier 3: Any Natural/Neural */
+  const nat = voices.find(x => 
+    x.name.toLowerCase().includes('natural') || x.name.toLowerCase().includes('neural')
+  );
+  if (nat) return nat;
+  
+  /* Tier 4: Default */
+  return voices[0] || null;
+}
+
 export default function SandboxTab({ project }) {
   const [sessionId, setSessionId]     = useState(null);
   const [messages, setMessages]       = useState([]);
