@@ -222,11 +222,7 @@ export default function SandboxTab({ project }) {
             utteranceRef.current = null;
             if (!voiceModeRef.current) return;
             setVState("idle");
-            if (!mutedRef.current) {
-              setTimeout(() => {
-                if (voiceModeRef.current && vStateRef.current === "idle") startListeningInner();
-              }, 650);
-            }
+            // SANDBOX IS ALWAYS PREVIEW: no auto-restart, manual mic click only
           };
           u.onerror = () => { utteranceRef.current = null; if (voiceModeRef.current) setVState("idle"); };
           window.speechSynthesis.speak(u);
