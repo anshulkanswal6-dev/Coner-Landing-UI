@@ -233,7 +233,13 @@ export default function SandboxTab({ project }) {
   const clearChat = useCallback(() => {
     /* Close voice mode if active */
     if (voiceModeRef.current) {
-      closeVoice();
+      setVoiceMode(false);
+      setIslandPhase("");
+      stopListening();
+      stopTTS();
+      setMuted(false);
+      mutedRef.current = false;
+      stopMicVisualization();
     }
     
     /* Clear messages */
@@ -247,7 +253,7 @@ export default function SandboxTab({ project }) {
     initSession();
     
     toast.success("Started new chat");
-  }, [clearStorage, initSession]);
+  }, [clearStorage, initSession, stopListening, stopTTS, stopMicVisualization]);
 
   /* ── Switch memory mode ── */
   const switchMemoryMode = useCallback((newMode) => {
