@@ -171,6 +171,198 @@ class EmergentPulseAPITester:
         }
         return self.run_test("Widget Message", "POST", "widget/message", 200, data=message_data, use_api_key=True)
 
+    # NEW FEATURE TESTS
+    def test_widget_js_endpoint(self):
+        """Test GET /api/widget.js returns JavaScript content"""
+        url = f"{self.base_url}/api/widget.js"
+        print(f"\n🔍 Testing Widget.js Endpoint...")
+        print(f"   URL: {url}")
+        
+        try:
+            response = requests.get(url)
+            print(f"   Status: {response.status_code}")
+            print(f"   Content-Type: {response.headers.get('Content-Type')}")
+            print(f"   Content Length: {len(response.text)} characters")
+            
+            success = (response.status_code == 200 and 
+                      'application/javascript' in response.headers.get('Content-Type', '') and
+                      'function()' in response.text and
+                      'ep-widget' in response.text)
+            
+            if success:
+                self.tests_passed += 1
+                print("✅ Passed - Widget.js endpoint working correctly")
+                # Check for voice and streaming features
+                has_voice = 'voice' in response.text.lower()
+                has_streaming = 'stream' in response.text.lower()
+                has_stt = 'speechrecognition' in response.text.lower()
+                print(f"   ✓ Voice features: {has_voice}")
+                print(f"   ✓ Streaming: {has_streaming}")  
+                print(f"   ✓ Speech recognition: {has_stt}")
+                return True, {"has_voice": has_voice, "has_streaming": has_streaming}
+            else:
+                print(f"❌ Failed - Expected JS content with application/javascript content-type")
+                print(f"   Content preview: {response.text[:200]}...")
+                return False, {}
+
+        except Exception as e:
+            print(f"❌ Failed - Exception: {str(e)}")
+            return False, {}
+        finally:
+            self.tests_run += 1
+
+    def test_widget_message_stream(self):
+        """Test POST /api/widget/message/stream returns SSE"""
+        if not hasattr(self, 'widget_session_id') or not self.widget_session_id:
+            print("⚠️  Skipping widget stream test - no widget session ID")
+            return False, {}
+        
+        url = f"{self.base_url}/api/widget/message/stream"
+        headers = {
+            'Content-Type': 'application/json',
+            'x-project-key': self.api_key
+        }
+        
+        message_data = {
+            "session_id": self.widget_session_id,
+            "content": "Tell me about AI in one sentence.",
+            "current_url": "https://example.com"
+        }
+        
+        print(f"\n🔍 Testing Widget Message Stream...")
+        print(f"   URL: {url}")
+        
+        try:
+            response = requests.post(url, json=message_data, headers=headers, stream=True)
+            print(f"   Status: {response.status_code}")
+            print(f"   Content-Type: {response.headers.get('Content-Type')}")
+            
+            if response.status_code == 200 and 'text/event-stream' in response.headers.get('Content-Type', ''):
+                # Read streaming response
+                tokens_received = 0
+                done_received = False
+                
+                for line in response.iter_lines(decode_unicode=True):
+                    if line and line.startswith('data: '):
+                        try:
+                            data = json.loads(line[6:])  # Remove 'data: '
+                            if 'token' in data:
+                                tokens_received += 1
+                            if data.get('done') == True:
+                                done_received = True
+                                print(f"   ✓ Final event with done:true and message_id: {data.get('message_id')}")
+                                break
+                        except json.JSONDecodeError:
+                            continue
+                    
+                    if tokens_received > 50:  # Stop after getting sufficient tokens
+                        break
+                
+                success = tokens_received > 0 and done_received
+                if success:
+                    self.tests_passed += 1
+                    print(f"✅ Passed - SSE streaming working, received {tokens_received} tokens")
+                    return True, {"tokens_received": tokens_received, "done_received": done_received}
+                else:
+                    print(f"❌ Failed - Expected SSE tokens and done event, got {tokens_received} tokens, done: {done_received}")
+                    return False, {}
+            else:
+                print(f"❌ Failed - Expected 200 with text/event-stream, got {response.status_code}")
+                return False, {}
+                
+        except Exception as e:
+            print(f"❌ Failed - Exception: {str(e)}")
+            return False, {}
+        finally:
+            self.tests_run += 1
+
+    def test_sandbox_message_stream(self):
+        """Test POST /api/projects/{id}/sandbox/message/stream returns SSE"""
+        if not self.session_id:
+            print("⚠️  Skipping sandbox stream test - no session ID")
+            return False, {}
+        
+        url = f"{self.base_url}/api/projects/{self.project_id}/sandbox/message/stream"
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {self.session_token}'
+        }
+        
+        message_data = {
+            "session_id": self.session_id,
+            "content": "What is artificial intelligence?",
+            "current_url": "https://example.com"
+        }
+        
+        print(f"\n🔍 Testing Sandbox Message Stream...")
+        print(f"   URL: {url}")
+        
+        try:
+            response = requests.post(url, json=message_data, headers=headers, stream=True, cookies={'session_token': self.session_token})
+            print(f"   Status: {response.status_code}")
+            print(f"   Content-Type: {response.headers.get('Content-Type')}")
+            
+            if response.status_code == 200 and 'text/event-stream' in response.headers.get('Content-Type', ''):
+                tokens_received = 0
+                done_received = False
+                
+                for line in response.iter_lines(decode_unicode=True):
+                    if line and line.startswith('data: '):
+                        try:
+                            data = json.loads(line[6:])
+                            if 'token' in data:
+                                tokens_received += 1
+                            if data.get('done') == True:
+                                done_received = True
+                                print(f"   ✓ Final event with done:true and message_id: {data.get('message_id')}")
+                                break
+                        except json.JSONDecodeError:
+                            continue
+                    
+                    if tokens_received > 50:
+                        break
+                
+                success = tokens_received > 0 and done_received
+                if success:
+                    self.tests_passed += 1
+                    print(f"✅ Passed - Sandbox SSE streaming working, received {tokens_received} tokens")
+                    return True, {"tokens_received": tokens_received}
+                else:
+                    print(f"❌ Failed - Expected streaming tokens, got {tokens_received}")
+                    return False, {}
+            else:
+                print(f"❌ Failed - Expected 200 with text/event-stream, got {response.status_code}")
+                return False, {}
+                
+        except Exception as e:
+            print(f"❌ Failed - Exception: {str(e)}")
+            return False, {}
+        finally:
+            self.tests_run += 1
+
+    def test_project_update_domains(self):
+        """Test PUT /api/projects/{id} updates whitelisted_domains"""
+        update_data = {
+            "whitelisted_domains": ["example.com", "test.com", "mysite.org"]
+        }
+        
+        success, response = self.run_test(
+            "Update Project Domains", 
+            "PUT", 
+            f"projects/{self.project_id}", 
+            200, 
+            data=update_data
+        )
+        
+        if success and response.get('whitelisted_domains') == update_data['whitelisted_domains']:
+            print("   ✓ Whitelisted domains updated successfully")
+            return True, response
+        elif success:
+            print(f"   ❌ Domains not updated correctly: {response.get('whitelisted_domains')}")
+            return False, response
+        else:
+            return False, {}
+
 def main():
     print("🚀 Starting EmergentPulse AI API Tests")
     print("=" * 50)
