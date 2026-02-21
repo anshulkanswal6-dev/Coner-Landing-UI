@@ -494,6 +494,55 @@ function showDots(){var t=document.createElement('div');t.className='ep-typing';
 function hideDots(){var t=$('ep-dots');if(t)t.remove();}
 function fmtMd(t){if(!t)return'';return t.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/`(.*?)`/g,'<code>$1</code>').replace(/\n/g,'<br>');}
 
+/* ── Smart Sentence Splitter ── */
+function splitSentences(text){
+  if(!text)return[];
+  /* Replace common abbreviations temporarily */
+  var t=text
+    .replace(/\bDr\./gi,'Dr<DOT>')
+    .replace(/\bMr\./gi,'Mr<DOT>')
+    .replace(/\bMrs\./gi,'Mrs<DOT>')
+    .replace(/\bMs\./gi,'Ms<DOT>')
+    .replace(/\bProf\./gi,'Prof<DOT>')
+    .replace(/\bInc\./gi,'Inc<DOT>')
+    .replace(/\bLtd\./gi,'Ltd<DOT>')
+    .replace(/\bCorp\./gi,'Corp<DOT>')
+    .replace(/\bSr\./gi,'Sr<DOT>')
+    .replace(/\bJr\./gi,'Jr<DOT>')
+    .replace(/\b([A-Z])\./g,'$1<DOT>'); // Single letter abbreviations
+  
+  /* Split on sentence boundaries */
+  var raw=t.split(/([.!?]+\s+)/);
+  var sentences=[];
+  var curr='';
+  
+  for(var i=0;i<raw.length;i++){
+    curr+=raw[i];
+    if(/[.!?]/.test(raw[i])&&curr.trim().length>0){
+      sentences.push(curr.trim().replace(/<DOT>/g,'.'));
+      curr='';
+    }
+  }
+  if(curr.trim())sentences.push(curr.trim().replace(/<DOT>/g,'.'));
+  
+  /* If no clean sentences, chunk by ~150 chars */
+  if(sentences.length===0||sentences.join('').length<text.length*0.5){
+    sentences=[];
+    var chunk='';
+    var words=text.split(/\s+/);
+    for(var j=0;j<words.length;j++){
+      chunk+=words[j]+' ';
+      if(chunk.length>=150){
+        sentences.push(chunk.trim());
+        chunk='';
+      }
+    }
+    if(chunk.trim())sentences.push(chunk.trim());
+  }
+  
+  return sentences.filter(function(s){return s.length>0;});
+}
+
 /* ── Send (streaming) ── */
 function sendText(txt){
   if(!txt||!SID||SENDING)return;
