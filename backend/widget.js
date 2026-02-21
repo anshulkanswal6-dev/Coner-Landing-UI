@@ -5,6 +5,8 @@ if(!script)return;
 var PK=script.getAttribute('data-project-key');
 if(!PK)return;
 var API=new URL(script.src).origin+'/api';
+/* Memory mode: "session" (default) or "persistent" */
+var MEMORY_MODE=script.getAttribute('data-memory-mode')||'session';
 
 /* ── State ── */
 var SID=null,CFG={},MSGS=[],OPEN=false,VOICE=false,SENDING=false,MUTED=false,RECOG=null,IREC=null;
