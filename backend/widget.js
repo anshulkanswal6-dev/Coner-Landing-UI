@@ -866,6 +866,16 @@ function openVoice(){
 /* ── Close Voice (morph island → FAB, reopen chat) ── */
 function closeVoice(){
   stopListening();stopTTS();MUTED=false;
+  
+  /* Cancel active SSE stream */
+  if(ACTIVE_SSE_READER){
+    try{ACTIVE_SSE_READER.cancel();}catch(e){}
+    ACTIVE_SSE_READER=null;
+  }
+  
+  /* Clean up Web Audio */
+  stopMicVisualization();
+  
   viBg.classList.remove('active');
   viWave.classList.remove('show');
 
@@ -876,8 +886,9 @@ function closeVoice(){
     clearTimeout(ANIM_T);
     viIsland.className='ep-vi-island';
     VOICE=false;VSTATE='idle';
-    /* Restore FAB with spring */
-    fab.style.cssText='position:fixed;bottom:20px;right:20px;z-index:99999;background:var(--ep-c,#7C3AED);transition:transform 300ms cubic-bezier(.34,1.56,.64,1),opacity 200ms;transform:scale(1);opacity:1;pointer-events:auto;width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,.15);';
+    /* Restore FAB with spring — PRESERVE primary color */
+    var color='var(--ep-c,#7C3AED)';
+    fab.style.cssText='position:fixed;bottom:20px;right:20px;z-index:99999;background:'+color+';transition:transform 300ms cubic-bezier(.34,1.56,.64,1),opacity 200ms;transform:scale(1);opacity:1;pointer-events:auto;width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,.15);';
     fab.innerHTML=SVG_X_16;
     /* Re-open chat with full history */
     setTimeout(function(){
