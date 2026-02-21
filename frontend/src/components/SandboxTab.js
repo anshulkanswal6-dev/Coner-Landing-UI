@@ -307,8 +307,10 @@ export default function SandboxTab({ project }) {
     setVStateR(s);
   }, []);
 
-  /* ── Stop TTS ── */
+  /* ── Stop TTS (with queue cleanup) ── */
   const stopTTS = useCallback(() => {
+    ttsActive.current = false;
+    ttsQueue.current = [];
     if (utteranceRef.current) {
       utteranceRef.current.onend  = null;
       utteranceRef.current.onerror = null;
