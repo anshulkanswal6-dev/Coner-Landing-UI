@@ -57,6 +57,7 @@ class ProjectUpdate(BaseModel):
     primary_color: Optional[str] = None
     status: Optional[str] = None
     whitelisted_domains: Optional[List[str]] = None
+    agent_mode: Optional[str] = None
 
 class GoldenRulesUpdate(BaseModel):
     preset_rules: Optional[Dict[str, bool]] = None
