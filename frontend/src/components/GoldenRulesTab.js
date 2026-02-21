@@ -71,6 +71,16 @@ export default function GoldenRulesTab({ projectId }) {
     finally { setSaving(false); }
   };
 
+  const updateAgentMode = async (mode) => {
+    try {
+      await axios.put(`${API}/projects/${projectId}`, { agent_mode: mode }, { withCredentials: true });
+      setAgentMode(mode);
+      toast.success(`Switched to ${mode === 'support' ? 'Support' : 'Acquisition'} mode`);
+    } catch { 
+      toast.error("Failed to update agent mode"); 
+    }
+  };
+
   return (
     <div data-testid="golden-rules-tab" className="space-y-6">
       {/* Preset Rules */}
