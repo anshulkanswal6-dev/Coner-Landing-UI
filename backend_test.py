@@ -9,7 +9,7 @@ API_KEY = "ep_efabd995e18a4096b89e68260b90cb74"
 PROJECT_ID = "proj_9d10065d69634f87"
 
 class VoiceIslandAPITester:
-    def __init__(self, base_url="https://business-ai-platform-1.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://voice-island-preview.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.tests_run = 0
         self.tests_passed = 0
