@@ -564,7 +564,9 @@ function sendText(txt){
     body:JSON.stringify({session_id:SID,content:txt,current_url:window.location.href})
   }).then(function(resp){
     hideDots();
-    var reader=resp.body.getReader(),dec=new TextDecoder();
+    var reader=resp.body.getReader();
+    ACTIVE_SSE_READER=reader; // Track for cleanup
+    var dec=new TextDecoder();
     var bubble=VOICE?null:mkStream(),full='',mid=null;
     function pump(){
       reader.read().then(function(r){
@@ -583,6 +585,7 @@ function sendText(txt){
       }).catch(function(){done();});
     }
     function done(){
+      ACTIVE_SSE_READER=null;
       var s=$('ep-strm');
       if(s){s.removeAttribute('id');MSGS.push({role:'bot',text:full,id:mid});}
       if(!VOICE&&mid){
@@ -602,7 +605,7 @@ function sendText(txt){
     }
     pump();
   }).catch(function(){
-    hideDots();SENDING=false;
+    hideDots();SENDING=false;ACTIVE_SSE_READER=null;
     if(VOICE)setVState('idle');
     renderMsg('bot','Something went wrong.',null);
   });
