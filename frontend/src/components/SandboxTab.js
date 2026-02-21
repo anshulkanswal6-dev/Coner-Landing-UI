@@ -280,7 +280,7 @@ export default function SandboxTab({ project }) {
   }, [messages, sessionId, saveToStorage]);
 
   /* Init session */
-  useEffect(() => { initSession(); }, [project.project_id]);
+  useEffect(() => { initSession(); }, [initSession, project.project_id]);
 
   /* Style injection (once) */
   useEffect(() => {
