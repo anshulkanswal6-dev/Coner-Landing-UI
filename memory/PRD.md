@@ -31,12 +31,15 @@ Build a multi-tenant AI SaaS platform (EmergentPulse AI / Coner AI) where busine
 
 ### Backend (server.py)
 - Auth: Google OAuth (Emergent), session management, /api/auth/session, /api/auth/me, /api/auth/logout
-- Projects: Full CRUD with API key generation, project-scoped isolation
-- Knowledge: Text + URL scraping with chunking & local embeddings
+- Projects: Full CRUD with API key generation, project-scoped isolation, domain whitelist
+- Knowledge: Text + URL scraping with chunking & local embeddings (sentence-transformers)
 - Golden Rules: Preset toggles + custom rules, injected into system prompt
 - Chat: RAG pipeline (embed → search → prompt assembly → GPT-4o-mini → lead extraction)
 - Widget API: init, message, feedback endpoints with x-project-key auth
-- Sandbox: Dashboard chat testing with debug info
+- **SSE Streaming**: /api/widget/message/stream - token-by-token streaming via Server-Sent Events
+- **Widget Bundle**: /api/widget.js - production-ready embeddable JS with voice mode, streaming, session persistence
+- **Domain Whitelist**: Validates Origin/Referer against project's whitelisted_domains
+- Sandbox: Dashboard chat testing with streaming support
 - Leads: CRUD + status management
 - Analytics: Aggregated stats (conversations, messages, leads, satisfaction)
 - Feedback: View rated messages + submit corrections (stored for RLHF retrieval)
@@ -48,13 +51,24 @@ Build a multi-tenant AI SaaS platform (EmergentPulse AI / Coner AI) where busine
 - Project Detail with 7 tabs:
   - Knowledge (text/URL upload, source list with status)
   - Golden Rules (toggle presets, custom rules)
-  - Sandbox (real-time chat, voice input, feedback buttons)
-  - Deploy (embed script, API key, React component code)
+  - **Sandbox (streaming SSE chat, voice island mode with STT→API→TTS, waveform animations)**
+  - **Deploy (production embed script, domain whitelist management, API key, React code snippet)**
   - Analytics (stats, charts, recent conversations)
   - Leads (kanban board with status management)
   - Feedback (rated responses, correction dialog)
 - Auth flow (Google OAuth callback, protected routes)
-- Responsive, dark theme dashboard with glassmorphism sidebar
+- Responsive, dark theme dashboard
+
+### Widget System (widget.js)
+- Self-initializing via script tag with data-project-key
+- Floating bottom-right chat bubble
+- Streaming SSE responses with real-time token display
+- Voice Island mode (circular pulsing UI, STT via Web Speech API, TTS playback)
+- Inline mic button for text-mode voice input
+- Feedback thumbs up/down on every response
+- Session persistence via sessionStorage
+- Async loading with no external dependencies
+- Domain whitelist validation via Origin/Referer headers
 
 ## P0 Remaining
 - None critical - all core flows functional
