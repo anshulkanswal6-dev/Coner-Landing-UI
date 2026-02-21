@@ -269,7 +269,7 @@ export default function SandboxTab({ project }) {
     } catch {}
   }, [getStorage, STORAGE_KEY]);
 
-  const initSession = async () => {
+  const initSession = useCallback(async () => {
     /* Try to load from storage first */
     const saved = loadFromStorage();
     
@@ -288,7 +288,7 @@ export default function SandboxTab({ project }) {
       
       saveToStorage(d.session_id, saved?.msgs || [{ role: "assistant", content: d.welcome_message, id: "welcome" }]);
     } catch { toast.error("Failed to init sandbox"); }
-  };
+  }, [loadFromStorage, saveToStorage, project.project_id]);
 
   /* ── Clear Chat (new conversation) ── */
   const clearChat = useCallback(() => {
@@ -308,7 +308,7 @@ export default function SandboxTab({ project }) {
     initSession();
     
     toast.success("Started new chat");
-  }, [clearStorage, initSession]);
+  }, [clearStorage, initSession, closeVoice]);
 
   /* ── Switch memory mode ── */
   const switchMemoryMode = useCallback((newMode) => {
