@@ -385,7 +385,12 @@ root.innerHTML=
   '<div class="ep-header">'+
     '<div class="ep-header-dot"></div>'+
     '<div class="ep-header-info"><div class="ep-header-name" id="ep-name">AI Assistant</div><div class="ep-header-sub">Online</div></div>'+
-    '<div style="display:flex;gap:6px"><button class="ep-hbtn" id="ep-close">'+SVG_X_16+'</button></div>'+
+    '<div style="display:flex;gap:6px">'+
+      '<button class="ep-hbtn" id="ep-new-chat" title="New Chat">'+
+        '<svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:#555;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 5v14M5 12h14"/></svg>'+
+      '</button>'+
+      '<button class="ep-hbtn" id="ep-close">'+SVG_X_16+'</button>'+
+    '</div>'+
   '</div>'+
   '<div class="ep-msgs" id="ep-msgs"></div>'+
   '<div class="ep-input-wrap">'+
