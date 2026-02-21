@@ -478,6 +478,8 @@ export default function SandboxTab({ project }) {
     r.onstart = () => {
       setVState("listening");
       setLiveText("");
+      /* Start real mic visualization if supported */
+      setupMicVisualization();
     };
 
     r.onresult = (e) => {
@@ -504,6 +506,7 @@ export default function SandboxTab({ project }) {
        so this guard won't accidentally reset back to idle                     */
     r.onend = () => {
       setLiveText("");
+      stopMicVisualization(); // Clean up Web Audio
       if (vStateRef.current === "listening") setVState("idle");
     };
 
