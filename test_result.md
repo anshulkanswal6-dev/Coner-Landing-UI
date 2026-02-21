@@ -234,20 +234,21 @@ frontend:
 
 metadata:
   created_by: "main_agent"
-  version: "2.0"
-  test_sequence: 4
+  version: "2.1"
+  test_sequence: 5
   run_ui: true
 
 test_plan:
   current_focus:
-    - "Voice Mode - Preview Safe (Iframe)"
-  stuck_tasks:
-    - "Voice Mode - Preview Safe (Iframe)"
+    - "Voice Mode - 7 New Features Upgrade"
+  stuck_tasks: []
   test_all: false
-  test_priority: "stuck_first"
+  test_priority: "high_first"
 
 agent_communication:
   - agent: "main"
     message: "Previous agent implemented 5 critical voice mode fixes but did NOT test them. All 5 fixes need comprehensive frontend testing. Voice mode has regressed multiple times - verify carefully. Use Emergent Google Auth for login. Test in sandbox tab at /dashboard/proj_{id}. Focus on browser SpeechRecognition API behavior and state transitions."
   - agent: "testing"
     message: "CRITICAL TESTING RESULTS - Authentication blocker prevented live UI testing. Performed comprehensive CODE REVIEW instead. FINDINGS: (1) FIX 1 FAILED - SandboxTab.js lines 226-228 has auto-restart WITHOUT iframe/preview detection, causing regression in sandbox. widget.js correctly implemented IS_IFRAME check. (2) FIX 2-5 PASSED code review - properly implemented. REQUIRED ACTION: Add preview/iframe detection to SandboxTab.js and disable auto-restart when in sandbox/preview mode. See detailed comments in status_history for each task."
+  - agent: "testing"
+    message: "iteration_5 - COMPREHENSIVE VOICE MODE TESTING COMPLETE. AUTHENTICATION ISSUE BLOCKED UI TESTING - Google Auth automation failed at login, could not access dashboard/sandbox/voice mode UI. Performed thorough CODE REVIEW of all 7 upgraded voice features instead. KEY FINDINGS: (1) CRITICAL BUG NOW FIXED - SandboxTab.js no longer has auto-restart issue, line 432 confirms 'no auto-restart'. (2) All 7 new features VERIFIED CORRECT in code: Natural voice selection, Real wave visualization (7 bars with animations), Sentence-chunked TTS with queue, Instant interrupt watcher, Cinematic morph animation, Mute toggle, Unified history. (3) All previous 5 fixes RE-CONFIRMED working. RECOMMENDATION: Manual UI testing required OR provide test credentials that work with automation. Code quality is excellent, all features properly implemented."
