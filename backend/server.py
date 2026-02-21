@@ -688,6 +688,18 @@ async def sandbox_init(project_id: str, user: dict = Depends(get_current_user)):
     fake_req = FakeRequest(project["api_key"])
     return await widget_init(fake_req)
 
+@api_router.post("/projects/{project_id}/sandbox/message/stream")
+async def sandbox_message_stream(project_id: str, data: ChatMessageRequest, user: dict = Depends(get_current_user)):
+    project = await get_project_for_user(project_id, user)
+    class FakeRequest:
+        def __init__(self, api_key):
+            self._headers = {"x-project-key": api_key}
+        @property
+        def headers(self):
+            return self._headers
+    fake_req = FakeRequest(project["api_key"])
+    return await widget_message_stream(data, fake_req)
+
 # ─── Leads Routes ───
 @api_router.get("/projects/{project_id}/leads")
 async def list_leads(project_id: str, user: dict = Depends(get_current_user)):
