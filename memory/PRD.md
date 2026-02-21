@@ -51,13 +51,29 @@ Build a multi-tenant AI SaaS platform (EmergentPulse AI / Coner AI) where busine
 - Project Detail with 7 tabs:
   - Knowledge (text/URL upload, source list with status)
   - Golden Rules (toggle presets, custom rules)
-  - **Sandbox (streaming SSE chat, voice island mode with STT→API→TTS, waveform animations)**
+  - **Sandbox (streaming SSE chat, cinematic Voice Island mode)**
   - **Deploy (production embed script, domain whitelist management, API key, React code snippet)**
   - Analytics (stats, charts, recent conversations)
   - Leads (kanban board with status management)
   - Feedback (rated responses, correction dialog)
 - Auth flow (Google OAuth callback, protected routes)
 - Responsive, dark theme dashboard
+
+### Voice Island v2 (Feb 2026) - Cinematic Redesign
+- **Positioning**: Fixed bottom-center pill (bottom:24px, left:50%, transform:translateX(-50%))
+- **Morph animation**: FAB → bottom-center island via CSS `@keyframes epViIn/epViOut` with JS-computed `--vi-dx` CSS var (320ms cubic-bezier(.4,0,.2,1))
+- **Dark glassmorphism**: rgba(0,0,0,.75) bg + backdrop-filter:blur(24px) + accent glow
+- **State machine**: IDLE → LISTENING → PROCESSING → SPEAKING (strict, no overlaps)
+- **Audio bars**: 7 vertical bars, fast-energetic (listening) vs smooth-rhythmic (speaking)
+- **Live transcript**: SpeechRecognition with interimResults:true, live user speech shown
+- **isFinal debounce**: 800ms silence before sending + 1.5s duplicate dedup
+- **Interrupt**: Orb tap during SPEAKING → stop TTS → switch to LISTENING
+- **Unified store**: Voice messages go into same MSGS array as text messages
+- **Auto-listen**: After TTS ends, auto-restarts listening (650ms delay)
+- **Close**: Island morphs back to FAB, chat reopens with full history
+- **Backdrop**: Semi-transparent overlay with backdrop-filter:blur(4px)
+- **Bottom wave**: SVG wave strips with state-driven colors (red=listening, teal=speaking, purple=idle/processing)
+- **Both files updated**: widget.js (production embed) + SandboxTab.js (React dashboard)
 
 ### Widget System (widget.js) — Voice Island v2
 - Self-initializing via script tag with data-project-key
