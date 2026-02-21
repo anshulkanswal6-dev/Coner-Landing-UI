@@ -25,7 +25,7 @@ css.textContent=`
 .ep-widget *{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;}
 
 /* ── FAB ── */
-.ep-fab{position:fixed;bottom:20px;right:20px;z-index:99999;width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,.15);transition:transform .3s cubic-bezier(.4,0,.2,1),box-shadow .3s,opacity .2s;}
+.ep-fab{position:fixed;bottom:20px;right:20px;z-index:99999;background:var(--ep-c,#7C3AED);width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,.15);transition:transform .3s cubic-bezier(.4,0,.2,1),box-shadow .3s,opacity .2s;}
 .ep-fab:hover{transform:scale(1.08);}
 .ep-fab svg{width:24px;height:24px;fill:#fff;}
 
