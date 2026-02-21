@@ -120,9 +120,9 @@ backend:
 frontend:
   - task: "Voice Mode - Preview Safe (Iframe)"
     implemented: true
-    working: "NA"
+    working: false
     file: "/app/backend/widget.js, /app/frontend/src/components/tabs/SandboxTab.js"
-    stuck_count: 3
+    stuck_count: 4
     priority: "high"
     needs_retesting: true
     status_history:
@@ -135,6 +135,9 @@ frontend:
       - working: "NA"
         agent: "main"
         comment: "FORK 4 - Fixed: Voice only starts on direct mic click, remains IDLE after session ends, no auto-restart in preview/iframe"
+      - working: false
+        agent: "testing"
+        comment: "CRITICAL BUG FOUND - Code review reveals SandboxTab.js (lines 226-228) has auto-restart logic WITHOUT iframe detection. The widget.js correctly checks IS_IFRAME before auto-restart (lines 527, 532), but SandboxTab.js always auto-restarts after TTS ends. This causes voice mode to auto-restart in preview/sandbox environment. REQUIRED FIX: Add IS_IFRAME or similar preview detection to SandboxTab.js and disable auto-restart when in preview mode (sandbox tab). Current code: 'if (!mutedRef.current) { setTimeout(() => { if (voiceModeRef.current && vStateRef.current === \"idle\") startListeningInner(); }, 650); }' should be conditional on NOT being in preview."
   
   - task: "Voice Mode - Unified History"
     implemented: true
