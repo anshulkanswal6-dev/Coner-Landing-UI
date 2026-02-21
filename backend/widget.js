@@ -458,6 +458,22 @@ function init(){
 }
 init();
 
+/* ── New Chat (clear history & restart) ── */
+function clearChat(){
+  /* Close voice mode if active */
+  if(VOICE){closeVoice();}
+  
+  /* Clear messages */
+  MSGS=[];
+  msgsCt.innerHTML='';
+  
+  /* Clear storage */
+  clearStorage();
+  
+  /* Reinitialize with new session */
+  init();
+}
+
 /* ── Intelligent Voice Selection ── */
 function selectBestVoice(){
   if(!('speechSynthesis' in window))return null;
