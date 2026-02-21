@@ -543,9 +543,12 @@ function startListening(){
   if(MUTED||SENDING)return;
   if(!('webkitSpeechRecognition' in window||'SpeechRecognition' in window)){viLbl.textContent='Voice unsupported';return;}
   stopTTS();
+  if(RECOG){try{RECOG.stop();}catch(e){}RECOG=null;}
   var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   RECOG=new SR();
-  RECOG.continuous=true;
+  /* continuous:false = one utterance per session — avoids the onend race condition
+     interimResults:true = still gives live transcript while speaking             */
+  RECOG.continuous=false;
   RECOG.interimResults=true;
   RECOG.lang='';
 
@@ -556,32 +559,24 @@ function startListening(){
   };
 
   RECOG.onresult=function(e){
-    var interim='',finalTxt='';
-    for(var i=e.resultIndex;i<e.results.length;i++){
-      if(e.results[i].isFinal)finalTxt+=e.results[i][0].transcript;
-      else interim+=e.results[i][0].transcript;
-    }
-    /* Show live interim transcript */
-    if(interim||finalTxt)viUsr.textContent=interim||finalTxt;
-    /* On final: 800ms silence then send */
-    if(finalTxt){
-      clearTimeout(SILENCE_TIMER);
-      var captured=finalTxt.trim();
-      SILENCE_TIMER=setTimeout(function(){
-        if(RECOG){try{RECOG.stop();}catch(e){}}
-        sendText(captured);
-      },800);
+    /* Take the most recent result */
+    var res=e.results[e.results.length-1];
+    var txt=res[0].transcript;
+    viUsr.textContent=txt;
+    /* Send immediately when browser is confident (isFinal) */
+    if(res.isFinal&&txt.trim()){
+      sendText(txt.trim());
     }
   };
 
   RECOG.onerror=function(e){
-    clearTimeout(SILENCE_TIMER);
-    if(e.error!=='no-speech')setVState('idle');
+    if(e.error!=='no-speech'&&e.error!=='aborted')setVState('idle');
   };
 
+  /* onend fires naturally after the single utterance completes */
   RECOG.onend=function(){
     viUsr.classList.remove('live');
-    clearTimeout(SILENCE_TIMER);
+    /* Only reset to idle if we're still in listening (not processing/speaking) */
     if(VSTATE==='listening')setVState('idle');
   };
 
