@@ -242,6 +242,65 @@ export default function SandboxTab({ project }) {
     } catch { toast.error("Failed to init sandbox"); }
   };
 
+  /* ── Web Audio API for real mic visualization ── */
+  const setupMicVisualization = useCallback(() => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
+    
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(stream => {
+        micStreamRef.current = stream;
+        audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+        analyserRef.current = audioCtxRef.current.createAnalyser();
+        analyserRef.current.fftSize = 256;
+        const src = audioCtxRef.current.createMediaStreamSource(stream);
+        src.connect(analyserRef.current);
+        animateMicBars();
+      })
+      .catch(() => { /* Fallback to CSS animation if mic denied */ });
+  }, []);
+
+  const animateMicBars = useCallback(() => {
+    if (!analyserRef.current || vStateRef.current !== 'listening' || !voiceModeRef.current) return;
+    
+    const dataArr = new Uint8Array(analyserRef.current.frequencyBinCount);
+    analyserRef.current.getByteFrequencyData(dataArr);
+    
+    /* Calculate RMS */
+    let sum = 0;
+    for (let i = 0; i < dataArr.length; i++) sum += dataArr[i] * dataArr[i];
+    const rms = Math.sqrt(sum / dataArr.length);
+    const amp = Math.min(rms / 128, 1); // Normalize 0-1
+    
+    /* Update 7 bars — center highest */
+    const bars = document.querySelectorAll('.sb-bar');
+    if (bars.length === 7) {
+      const heights = [amp * 0.5, amp * 0.75, amp * 0.95, amp, amp * 0.95, amp * 0.75, amp * 0.5];
+      bars.forEach((bar, i) => {
+        const h = 3 + heights[i] * 13; // 3px min, 16px max
+        bar.style.height = h + 'px';
+        bar.style.animation = 'none'; // Disable CSS animation
+      });
+    }
+    
+    animFrameRef.current = requestAnimationFrame(animateMicBars);
+  }, []);
+
+  const stopMicVisualization = useCallback(() => {
+    if (animFrameRef.current) {
+      cancelAnimationFrame(animFrameRef.current);
+      animFrameRef.current = null;
+    }
+    if (micStreamRef.current) {
+      micStreamRef.current.getTracks().forEach(t => t.stop());
+      micStreamRef.current = null;
+    }
+    if (audioCtxRef.current) {
+      audioCtxRef.current.close();
+      audioCtxRef.current = null;
+    }
+    analyserRef.current = null;
+  }, []);
+
   /* ── Set voice state ── */
   const setVState = useCallback((s) => {
     vStateRef.current = s;
