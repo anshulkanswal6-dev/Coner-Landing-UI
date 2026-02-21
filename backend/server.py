@@ -28,6 +28,11 @@ db = client[os.environ['DB_NAME']]
 EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY')
 EMERGENT_PROXY_URL = "https://integrations.emergentagent.com/llm"
 
+# Local embedding model for semantic search
+embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+logger_st = logging.getLogger("sentence_transformers")
+logger_st.setLevel(logging.WARNING)
+
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
