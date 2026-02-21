@@ -540,8 +540,18 @@ export default function SandboxTab({ project }) {
     stopListening();
     stopTTS();
     setMuted(false); mutedRef.current = false;
+    
+    /* Cancel active SSE stream */
+    if (sseReaderRef.current) {
+      try { sseReaderRef.current.cancel(); } catch {}
+      sseReaderRef.current = null;
+    }
+    
+    /* Clean up Web Audio */
+    stopMicVisualization();
+    
     setIslandPhase("leaving");
-  }, [stopListening, stopTTS]);
+  }, [stopListening, stopTTS, stopMicVisualization]);
 
   /* ── Orb tap handler ── */
   const handleOrbTap = useCallback(() => {
