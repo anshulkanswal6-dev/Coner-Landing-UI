@@ -22,8 +22,21 @@ export default function GoldenRulesTab({ projectId }) {
   const [rules, setRules] = useState({ preset_rules: {}, custom_rules: [] });
   const [newRule, setNewRule] = useState("");
   const [saving, setSaving] = useState(false);
+  const [agentMode, setAgentMode] = useState("support");
+  const [project, setProject] = useState(null);
 
-  useEffect(() => { fetchRules(); }, [projectId]);
+  useEffect(() => { 
+    fetchRules();
+    fetchProject();
+  }, [projectId]);
+
+  const fetchProject = async () => {
+    try {
+      const res = await axios.get(`${API}/projects/${projectId}`, { withCredentials: true });
+      setProject(res.data);
+      setAgentMode(res.data.agent_mode || "support");
+    } catch { /* use defaults */ }
+  };
 
   const fetchRules = async () => {
     try {
