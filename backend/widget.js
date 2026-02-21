@@ -672,16 +672,18 @@ function stopTTS(){
   if('speechSynthesis' in window)window.speechSynthesis.cancel();
 }
 
-/* ── Background interrupt watcher (non-iframe only) ── */
+/* ── Instant interrupt watcher (continuous, no delay) ── */
 function startInterruptWatcher(){
-  if(IREC||MUTED||!VOICE||IS_IFRAME)return;
+  if(IREC||MUTED||!VOICE||IS_IFRAME||!TTS_ACTIVE)return;
   var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR)return;
-  IREC=new SR();IREC.continuous=false;IREC.interimResults=false;
+  IREC=new SR();
+  IREC.continuous=true; // Continuous for instant detection
+  IREC.interimResults=true; // Detect speech immediately
   IREC.onresult=function(e){
-    if(VSTATE!=='speaking')return;
+    if(!TTS_ACTIVE)return;
     var txt=(e.results[0]&&e.results[0][0]?e.results[0][0].transcript:'').trim();
-    stopTTS(); // cancels speech + stops IREC
+    stopTTS(); // Cancels all queued sentences + stops IREC
     if(txt)sendText(txt);
     else{setVState('idle');setTimeout(function(){if(VOICE&&!MUTED)startListening();},200);}
   };
@@ -689,8 +691,8 @@ function startInterruptWatcher(){
   IREC.onend=function(){
     IREC=null;
     /* Restart watcher if still speaking */
-    if(VSTATE==='speaking'&&VOICE&&!MUTED)
-      setTimeout(function(){if(VSTATE==='speaking')startInterruptWatcher();},200);
+    if(TTS_ACTIVE&&VOICE&&!MUTED)
+      setTimeout(function(){if(TTS_ACTIVE)startInterruptWatcher();},150);
   };
   try{IREC.start();}catch(e){IREC=null;}
 }
