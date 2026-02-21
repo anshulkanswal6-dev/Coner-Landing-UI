@@ -23,9 +23,14 @@ var ACTIVE_SSE_READER=null;
 /* Debounce localStorage */
 var SAVE_TIMEOUT=null;
 
-/* ── Persistence ── */
+/* ── Persistence (debounced) ── */
 var LS_KEY='ep_data_'+PK;
-function saveLocal(){try{localStorage.setItem(LS_KEY,JSON.stringify({sid:SID,msgs:MSGS.slice(-50)}));}catch(e){}}
+function saveLocal(){
+  clearTimeout(SAVE_TIMEOUT);
+  SAVE_TIMEOUT=setTimeout(function(){
+    try{localStorage.setItem(LS_KEY,JSON.stringify({sid:SID,msgs:MSGS.slice(-50)}));}catch(e){}
+  },300);
+}
 function loadLocal(){try{return JSON.parse(localStorage.getItem(LS_KEY));}catch(e){return null;}}
 
 /* ── CSS ── */
