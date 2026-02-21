@@ -651,6 +651,16 @@ async def widget_feedback(data: FeedbackRequest, request: Request):
     await db.messages.update_one({"message_id": data.message_id}, {"$set": {"feedback": data.feedback}})
     return {"message": "Feedback recorded"}
 
+# ─── Widget JS Bundle ───
+@api_router.get("/widget.js")
+async def serve_widget_js():
+    widget_path = ROOT_DIR / "widget.js"
+    if not widget_path.exists():
+        raise HTTPException(status_code=404, detail="Widget not found")
+    content = widget_path.read_text()
+    return PlainTextResponse(content, media_type="application/javascript",
+        headers={"Cache-Control": "public, max-age=3600", "Access-Control-Allow-Origin": "*"})
+
 # ─── Dashboard Chat (Sandbox) ───
 @api_router.post("/projects/{project_id}/sandbox/message")
 async def sandbox_message(project_id: str, data: ChatMessageRequest, user: dict = Depends(get_current_user)):
