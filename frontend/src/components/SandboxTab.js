@@ -181,67 +181,6 @@ export default function SandboxTab({ project }) {
   useEffect(() => { sendingRef.current = sending; }, [sending]);
   useEffect(() => { sessionRef.current = sessionId; }, [sessionId]);
 
-  /* Scroll to bottom on new messages */
-  useEffect(() => { messagesEnd.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, streamingText]);
-
-  /* Auto-save messages to storage */
-  useEffect(() => {
-    if (sessionId && messages.length > 0) {
-      saveToStorage(sessionId, messages);
-    }
-  }, [messages, sessionId, saveToStorage]);
-
-  /* Init session */
-  useEffect(() => { initSession(); }, [project.project_id]);
-
-  /* Style injection (once) */
-  useEffect(() => {
-    if (document.getElementById("sb-voice-styles")) return;
-    const s = document.createElement("style");
-    s.id = "sb-voice-styles";
-    s.textContent = VOICE_STYLES;
-    document.head.appendChild(s);
-  }, []);
-  
-  /* Voice initialization */
-  useEffect(() => {
-    const initVoice = () => {
-      selectedVoice.current = selectBestVoice();
-      voiceReady.current = true;
-    };
-    
-    if ('speechSynthesis' in window) {
-      if (window.speechSynthesis.getVoices().length > 0) initVoice();
-      else window.speechSynthesis.onvoiceschanged = initVoice;
-    }
-  }, []);
-
-  /* Island phase transitions */
-  useEffect(() => {
-    if (islandPhase === "entering") {
-      const t = setTimeout(() => {
-        setIslandPhase("open");
-        setVStateR("idle");
-        vStateRef.current = "idle";
-        /* Auto-start listening after island opens */
-        if (!mutedRef.current) {
-          setTimeout(() => {
-            if (voiceModeRef.current && vStateRef.current === "idle") startListeningInner();
-          }, 350);
-        }
-      }, 380);
-      return () => clearTimeout(t);
-    }
-    if (islandPhase === "leaving") {
-      const t = setTimeout(() => {
-        setIslandPhase("");
-        setVoiceMode(false);
-        voiceModeRef.current = false;
-      }, 320);
-      return () => clearTimeout(t);
-    }
-  }, [islandPhase]);
-
   /* ── Storage helpers (mode-aware) ── */
   const getStorage = useCallback(() => {
     return memoryMode === 'persistent' ? localStorage : sessionStorage;
@@ -329,6 +268,67 @@ export default function SandboxTab({ project }) {
     
     toast.success(`Switched to ${newMode === 'session' ? 'Session' : 'Persistent'} Memory`);
   }, [memoryMode, clearStorage, initSession]);
+
+  /* Scroll to bottom on new messages */
+  useEffect(() => { messagesEnd.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, streamingText]);
+
+  /* Auto-save messages to storage */
+  useEffect(() => {
+    if (sessionId && messages.length > 0) {
+      saveToStorage(sessionId, messages);
+    }
+  }, [messages, sessionId, saveToStorage]);
+
+  /* Init session */
+  useEffect(() => { initSession(); }, [project.project_id]);
+
+  /* Style injection (once) */
+  useEffect(() => {
+    if (document.getElementById("sb-voice-styles")) return;
+    const s = document.createElement("style");
+    s.id = "sb-voice-styles";
+    s.textContent = VOICE_STYLES;
+    document.head.appendChild(s);
+  }, []);
+  
+  /* Voice initialization */
+  useEffect(() => {
+    const initVoice = () => {
+      selectedVoice.current = selectBestVoice();
+      voiceReady.current = true;
+    };
+    
+    if ('speechSynthesis' in window) {
+      if (window.speechSynthesis.getVoices().length > 0) initVoice();
+      else window.speechSynthesis.onvoiceschanged = initVoice;
+    }
+  }, []);
+
+  /* Island phase transitions */
+  useEffect(() => {
+    if (islandPhase === "entering") {
+      const t = setTimeout(() => {
+        setIslandPhase("open");
+        setVStateR("idle");
+        vStateRef.current = "idle";
+        /* Auto-start listening after island opens */
+        if (!mutedRef.current) {
+          setTimeout(() => {
+            if (voiceModeRef.current && vStateRef.current === "idle") startListeningInner();
+          }, 350);
+        }
+      }, 380);
+      return () => clearTimeout(t);
+    }
+    if (islandPhase === "leaving") {
+      const t = setTimeout(() => {
+        setIslandPhase("");
+        setVoiceMode(false);
+        voiceModeRef.current = false;
+      }, 320);
+      return () => clearTimeout(t);
+    }
+  }, [islandPhase]);
 
   /* ── Web Audio API for real mic visualization ── */
   const setupMicVisualization = useCallback(() => {
