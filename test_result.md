@@ -101,3 +101,107 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: "Build EmergentPulse AI - a multi-tenant AI SaaS platform with embeddable chat widget, RAG pipeline, voice mode, and conversation intelligence"
+
+backend:
+  - task: "SSE Streaming Chat API"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "iteration_3 - Streaming endpoints fully functional"
+
+frontend:
+  - task: "Voice Mode - Preview Safe (Iframe)"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/widget.js, /app/frontend/src/components/tabs/SandboxTab.js"
+    stuck_count: 3
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "user"
+        comment: "User message #52 - Voice mode not reacting to speech"
+      - working: false
+        agent: "user"
+        comment: "User message #72 - Red dot appears then goes back to purple"
+      - working: "NA"
+        agent: "main"
+        comment: "FORK 4 - Fixed: Voice only starts on direct mic click, remains IDLE after session ends, no auto-restart in preview/iframe"
+  
+  - task: "Voice Mode - Unified History"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/widget.js, /app/frontend/src/components/tabs/SandboxTab.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "FORK 4 - Voice messages now appear in main chat when voice island closes"
+  
+  - task: "Voice Mode - Interruptible AI Speech"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/widget.js, /app/frontend/src/components/tabs/SandboxTab.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "FORK 4 - Speaking while AI talks immediately stops TTS and switches to LISTENING"
+  
+  - task: "Voice Mode - Duplicate Prevention"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/widget.js, /app/frontend/src/components/tabs/SandboxTab.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "FORK 4 - Prevents duplicate messages from single utterance"
+  
+  - task: "Voice Mode - Launcher Color Fix"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/widget.js, /app/frontend/src/components/tabs/SandboxTab.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "FORK 4 - Launcher button correctly reverts to purple after exiting voice mode"
+
+metadata:
+  created_by: "main_agent"
+  version: "2.0"
+  test_sequence: 4
+  run_ui: true
+
+test_plan:
+  current_focus:
+    - "Voice Mode - Preview Safe (Iframe)"
+    - "Voice Mode - Unified History"
+    - "Voice Mode - Interruptible AI Speech"
+    - "Voice Mode - Duplicate Prevention"
+    - "Voice Mode - Launcher Color Fix"
+  stuck_tasks:
+    - "Voice Mode - Preview Safe (Iframe)"
+  test_all: false
+  test_priority: "stuck_first"
+
+agent_communication:
+  - agent: "main"
+    message: "Previous agent implemented 5 critical voice mode fixes but did NOT test them. All 5 fixes need comprehensive frontend testing. Voice mode has regressed multiple times - verify carefully. Use Emergent Google Auth for login. Test in sandbox tab at /dashboard/proj_{id}. Focus on browser SpeechRecognition API behavior and state transitions."
