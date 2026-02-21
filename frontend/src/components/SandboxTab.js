@@ -254,16 +254,16 @@ export default function SandboxTab({ project }) {
       return;
     }
     stopTTS();
-    /* Stop any lingering recognition before starting a new one */
     if (recognitionRef.current) {
       try { recognitionRef.current.stop(); } catch {}
       recognitionRef.current = null;
     }
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     const r  = new SR();
-    /* continuous:false = one clean utterance, avoids the onend race condition
-       interimResults:true = live transcript while the user speaks            */
-    r.continuous     = false;
+    /* continuous:true  = keeps mic alive, no premature no-speech timeout
+       interimResults:true = live transcript while user speaks
+       We stop manually as soon as isFinal fires (avoids any timer race)   */
+    r.continuous     = true;
     r.interimResults = true;
     r.lang = "";
 
@@ -273,21 +273,27 @@ export default function SandboxTab({ project }) {
     };
 
     r.onresult = (e) => {
-      /* Use the most recent result */
       const res = e.results[e.results.length - 1];
       const txt = res[0].transcript;
       setLiveText(txt);
-      /* Send immediately on isFinal — browser is confident */
       if (res.isFinal && txt.trim()) {
+        /* Stop recognition immediately, then send */
+        if (recognitionRef.current) { try { recognitionRef.current.stop(); } catch {} }
         sendText(txt.trim());
       }
     };
 
     r.onerror = (e) => {
-      if (e.error !== "no-speech" && e.error !== "aborted") setVState("idle");
+      if (e.error === "not-allowed") {
+        toast.error("Microphone access denied");
+        setVState("idle");
+      } else if (e.error !== "no-speech" && e.error !== "aborted") {
+        setVState("idle");
+      }
     };
 
-    /* onend fires naturally after the single utterance completes */
+    /* onend fires after we call stop() — by that point vState is 'processing',
+       so this guard won't accidentally reset back to idle                     */
     r.onend = () => {
       setLiveText("");
       if (vStateRef.current === "listening") setVState("idle");
