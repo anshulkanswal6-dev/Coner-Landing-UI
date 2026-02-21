@@ -448,7 +448,7 @@ export default function SandboxTab({ project }) {
                   </div>
                 )}
                 <div className={`max-w-[75%] rounded-xl px-4 py-2.5 ${msg.role === "user" ? "bg-[#7C3AED] text-white" : "bg-zinc-800 text-zinc-100"}`}>
-                  <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                  <p className="text-sm whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: fmtMd(msg.content) }} />
                   {msg.role === "assistant" && msg.id !== "welcome" && (
                     <div className="flex items-center gap-1 mt-2 pt-1 border-t border-white/5">
                       <button data-testid={`feedback-up-${msg.id}`} onClick={() => giveFeedback(msg.id, 1)}
