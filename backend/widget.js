@@ -546,9 +546,10 @@ function startListening(){
   if(RECOG){try{RECOG.stop();}catch(e){}RECOG=null;}
   var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   RECOG=new SR();
-  /* continuous:false = one utterance per session — avoids the onend race condition
-     interimResults:true = still gives live transcript while speaking             */
-  RECOG.continuous=false;
+  /* continuous:true  = keeps mic alive, no premature no-speech timeout
+     interimResults:true = live transcript while the user speaks
+     We stop manually as soon as isFinal fires (avoids the 800ms timer race) */
+  RECOG.continuous=true;
   RECOG.interimResults=true;
   RECOG.lang='';
 
@@ -559,24 +560,25 @@ function startListening(){
   };
 
   RECOG.onresult=function(e){
-    /* Take the most recent result */
     var res=e.results[e.results.length-1];
     var txt=res[0].transcript;
     viUsr.textContent=txt;
-    /* Send immediately when browser is confident (isFinal) */
     if(res.isFinal&&txt.trim()){
+      /* Stop recognition immediately, then send */
+      if(RECOG){try{RECOG.stop();}catch(x){}}
       sendText(txt.trim());
     }
   };
 
   RECOG.onerror=function(e){
-    if(e.error!=='no-speech'&&e.error!=='aborted')setVState('idle');
+    if(e.error==='not-allowed'){viLbl.textContent='Mic access denied';setVState('idle');}
+    else if(e.error!=='no-speech'&&e.error!=='aborted')setVState('idle');
   };
 
-  /* onend fires naturally after the single utterance completes */
+  /* onend fires after we call stop() — by that point VSTATE is 'processing',
+     so this guard won't accidentally reset back to idle                       */
   RECOG.onend=function(){
     viUsr.classList.remove('live');
-    /* Only reset to idle if we're still in listening (not processing/speaking) */
     if(VSTATE==='listening')setVState('idle');
   };
 
