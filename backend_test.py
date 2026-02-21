@@ -364,8 +364,8 @@ class EmergentPulseAPITester:
             return False, {}
 
 def main():
-    print("🚀 Starting EmergentPulse AI API Tests")
-    print("=" * 50)
+    print("🚀 Starting EmergentPulse AI API Tests - NEW FEATURES")
+    print("=" * 60)
     
     tester = EmergentPulseAPITester()
     
@@ -382,9 +382,15 @@ def main():
     test_results.append(("Update Golden Rules", *tester.test_update_golden_rules()))
     test_results.append(("Add Knowledge Text", *tester.test_add_knowledge_text()))
     
+    # NEW FEATURE: Project domain whitelist update
+    test_results.append(("Update Project Domains", *tester.test_project_update_domains()))
+    
     # Sandbox tests
     test_results.append(("Sandbox Init", *tester.test_sandbox_init()))
     test_results.append(("Sandbox Message", *tester.test_sandbox_message()))
+    
+    # NEW FEATURE: Sandbox SSE streaming
+    test_results.append(("Sandbox Message Stream", *tester.test_sandbox_message_stream()))
     
     # Analytics and data tests
     test_results.append(("Get Analytics", *tester.test_get_analytics()))
@@ -395,19 +401,31 @@ def main():
     test_results.append(("Widget Init", *tester.test_widget_init()))
     test_results.append(("Widget Message", *tester.test_widget_message()))
     
+    # NEW FEATURES: Widget.js and SSE streaming
+    test_results.append(("Widget.js Endpoint", *tester.test_widget_js_endpoint()))
+    test_results.append(("Widget Message Stream", *tester.test_widget_message_stream()))
+    
     # Print summary
-    print("\n" + "=" * 50)
-    print("📊 TEST SUMMARY")
-    print("=" * 50)
+    print("\n" + "=" * 60)
+    print("📊 TEST SUMMARY - NEW FEATURES FOCUS")
+    print("=" * 60)
     
     failed_tests = []
     for test_name, success, response in test_results:
         status = "✅ PASS" if success else "❌ FAIL"
+        # Highlight new features
+        if any(keyword in test_name.lower() for keyword in ['stream', 'widget.js', 'domains']):
+            status += " [NEW FEATURE]"
         print(f"{status} {test_name}")
         if not success:
             failed_tests.append(test_name)
     
     print(f"\n📈 Results: {tester.tests_passed}/{tester.tests_run} tests passed")
+    
+    # Count new feature tests
+    new_feature_tests = [t for t in test_results if any(keyword in t[0].lower() for keyword in ['stream', 'widget.js', 'domains'])]
+    new_feature_passed = len([t for t in new_feature_tests if t[1]])
+    print(f"🆕 New Features: {new_feature_passed}/{len(new_feature_tests)} tests passed")
     
     if failed_tests:
         print("\n❌ Failed Tests:")
