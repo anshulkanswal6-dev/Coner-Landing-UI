@@ -192,6 +192,19 @@ export default function SandboxTab({ project }) {
     s.textContent = VOICE_STYLES;
     document.head.appendChild(s);
   }, []);
+  
+  /* Voice initialization */
+  useEffect(() => {
+    const initVoice = () => {
+      selectedVoice.current = selectBestVoice();
+      voiceReady.current = true;
+    };
+    
+    if ('speechSynthesis' in window) {
+      if (window.speechSynthesis.getVoices().length > 0) initVoice();
+      else window.speechSynthesis.onvoiceschanged = initVoice;
+    }
+  }, []);
 
   /* Island phase transitions */
   useEffect(() => {
