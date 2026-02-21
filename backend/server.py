@@ -95,14 +95,8 @@ def cosine_similarity(a, b):
 async def get_embedding(text: str) -> List[float]:
     try:
         text = text.replace("\n", " ").strip()[:8000]
-        response = litellm.embedding(
-            model="text-embedding-3-small",
-            input=[text],
-            api_key=EMERGENT_LLM_KEY,
-            api_base=EMERGENT_PROXY_URL,
-            custom_llm_provider="openai"
-        )
-        return response.data[0]['embedding']
+        embedding = embedding_model.encode(text)
+        return embedding.tolist()
     except Exception as e:
         logger.error(f"Embedding error: {e}")
         raise HTTPException(status_code=500, detail="Failed to generate embedding")
