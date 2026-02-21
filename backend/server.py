@@ -181,6 +181,105 @@ async def search_corrections(project_id: str, query_embedding: List[float]) -> O
                 return c["corrected_response"]
     return None
 
+def validate_widget_origin(request: Request, project: dict):
+    """Validate request origin against project's whitelisted domains."""
+    domains = project.get("whitelisted_domains", [])
+    if not domains:
+        return  # No whitelist = allow all (development mode)
+    origin = request.headers.get("origin", "")
+    referer = request.headers.get("referer", "")
+    check = origin or referer
+    if not check:
+        return  # Allow requests without origin (e.g. server-side)
+    from urllib.parse import urlparse
+    parsed = urlparse(check)
+    host = parsed.hostname or ""
+    if not any(host == d or host.endswith(f".{d}") for d in domains):
+        raise HTTPException(status_code=403, detail="Domain not whitelisted")
+
+async def build_chat_context(project: dict, session_id: str, user_content: str, current_url: str = ""):
+    """Shared RAG pipeline: embed query, search chunks/corrections, build prompt."""
+    project_id = project["project_id"]
+    query_embedding = await get_embedding(user_content)
+
+    # Check corrections first
+    correction = await search_corrections(project_id, query_embedding)
+    if correction:
+        return {"type": "correction", "content": correction}
+
+    # Search knowledge
+    relevant_chunks = await search_similar_chunks(project_id, query_embedding, top_k=5)
+    context = "\n\n".join([f"[Source: {c['source']}]\n{c['content']}" for c in relevant_chunks if c['score'] > 0.3])
+
+    # Get conversation history
+    history = await db.messages.find(
+        {"session_id": session_id}, {"_id": 0, "role": 1, "content": 1}
+    ).sort("created_at", 1).to_list(20)
+
+    # Build system prompt with golden rules
+    rules = project.get("golden_rules", {})
+    preset = rules.get("preset_rules", {})
+    custom = rules.get("custom_rules", [])
+    rules_text = ""
+    if preset.get("professional_tone"):
+        rules_text += "- Always maintain a professional and friendly tone.\n"
+    if preset.get("never_mention_competitors"):
+        rules_text += "- Never mention or compare with competitors.\n"
+    if preset.get("dont_discuss_pricing"):
+        rules_text += "- Do not discuss specific pricing details. Direct to sales team.\n"
+    if preset.get("stay_on_topic"):
+        rules_text += "- Stay on topic. Only answer questions related to the business.\n"
+    if preset.get("be_concise"):
+        rules_text += "- Keep responses concise and clear.\n"
+    if preset.get("ask_before_assuming"):
+        rules_text += "- Ask clarifying questions before making assumptions.\n"
+    for r in custom:
+        rules_text += f"- {r}\n"
+
+    mode = project.get("agent_mode", "support")
+    if mode == "acquisition":
+        mode_instruction = 'You are in ACQUISITION mode. Qualify the visitor as a lead. Naturally collect: name, email, phone, and requirements. When collected, append JSON: {"lead": {"name": "...", "email": "...", "phone": "...", "requirements": "..."}}'
+    else:
+        mode_instruction = "You are in SUPPORT mode. Help the user with their questions using the knowledge base."
+
+    system_prompt = f"""You are an AI assistant for "{project['name']}". {project.get('description', '')}
+
+{mode_instruction}
+
+RULES:
+{rules_text}
+
+KNOWLEDGE BASE CONTEXT:
+{context if context else "No relevant knowledge found. Answer based on general knowledge but stay within the business scope."}
+
+Current URL: {current_url or 'Not provided'}
+
+Respond in markdown format when helpful. Be helpful, accurate, and follow all rules strictly."""
+
+    chat_messages = [{"role": "system", "content": system_prompt}]
+    for h in history[-10:]:
+        chat_messages.append({"role": h["role"], "content": h["content"] if isinstance(h["content"], str) else str(h["content"])})
+
+    return {"type": "rag", "chat_messages": chat_messages, "system_prompt": system_prompt, "chunks_used": len(relevant_chunks)}
+
+async def store_lead_if_present(response_text: str, project_id: str, session_id: str):
+    """Extract lead JSON from response and store it."""
+    lead_match = re.search(r'\{"lead":\s*\{[^}]+\}\}', response_text)
+    if lead_match:
+        try:
+            lead_data = json.loads(lead_match.group())["lead"]
+            await db.leads.insert_one({
+                "lead_id": gen_id("lead_"), "project_id": project_id,
+                "session_id": session_id, "name": lead_data.get("name", ""),
+                "email": lead_data.get("email", ""), "phone": lead_data.get("phone", ""),
+                "requirements": lead_data.get("requirements", ""), "status": "New",
+                "created_at": datetime.now(timezone.utc).isoformat()
+            })
+            return response_text.replace(lead_match.group(), "").strip()
+        except Exception:
+            pass
+    return response_text
+
 # ─── Auth Routes ───
 @api_router.post("/auth/session")
 async def auth_session(request: Request, response: Response):
