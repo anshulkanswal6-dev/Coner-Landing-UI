@@ -59,16 +59,23 @@ Build a multi-tenant AI SaaS platform (EmergentPulse AI / Coner AI) where busine
 - Auth flow (Google OAuth callback, protected routes)
 - Responsive, dark theme dashboard
 
-### Widget System (widget.js)
+### Widget System (widget.js) — Voice Island v2
 - Self-initializing via script tag with data-project-key
-- Floating bottom-right chat bubble
+- Floating bottom-right chat bubble with morph animations (chat↔fab↔oval)
 - Streaming SSE responses with real-time token display
-- Voice Island mode (circular pulsing UI, STT via Web Speech API, TTS playback)
-- Inline mic button for text-mode voice input
+- **Voice Island**: Centered oval overlay with:
+  - Animated orb (color-coded: purple=idle, red=listening, yellow=processing, teal=speaking, gray=muted)
+  - Pulsing ring animations synced to voice state
+  - Last user message (translucent) + last AI response (translucent)
+  - Mute button (stops mic without exiting voice mode)
+  - Close button (restores chat with full history preserved)
+  - Full-width 3-layer bottom wave animation (SVG) reacting to voice state
+  - Auto-listen loop: user speaks → AI thinks → AI speaks → auto-listen again
+- STT via Web Speech API (SpeechRecognition)
+- TTS via Web Speech API (speechSynthesis)
 - Feedback thumbs up/down on every response
-- Session persistence via sessionStorage
-- Async loading with no external dependencies
-- Domain whitelist validation via Origin/Referer headers
+- **localStorage** persistence (conversation survives page navigation)
+- Async loading, no external dependencies, ~24KB
 
 ## P0 Remaining
 - None critical - all core flows functional
