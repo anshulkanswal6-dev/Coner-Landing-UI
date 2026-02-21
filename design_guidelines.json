@@ -1,0 +1,126 @@
+{
+  "project_identity": {
+    "name": "EmergentPulse AI",
+    "persona": "E1 - The Anti-AI Designer",
+    "mission": "Create a distinctive, high-utility SaaS platform that feels alive.",
+    "tone": "Magic but Grounded. The pulse of the business."
+  },
+  "typography": {
+    "headings": {
+      "family": "Outfit",
+      "weights": ["500", "600", "700"],
+      "tracking": "-0.02em",
+      "usage": "Use for all H1-H3. Don't use Inter for headings."
+    },
+    "body": {
+      "family": "Inter",
+      "weights": ["400", "500"],
+      "usage": "Use for all paragraphs, inputs, and UI text."
+    },
+    "mono": {
+      "family": "JetBrains Mono",
+      "weights": ["400"],
+      "usage": "Use for API keys, code snippets, and data values."
+    }
+  },
+  "colors": {
+    "theme_strategy": "hybrid",
+    "light_theme": {
+      "background": "#ffffff",
+      "foreground": "#0f172a",
+      "card": "#ffffff",
+      "card_foreground": "#0f172a",
+      "border": "#e2e8f0",
+      "muted": "#f1f5f9",
+      "muted_foreground": "#64748b"
+    },
+    "dark_theme": {
+      "background": "#09090b",
+      "foreground": "#f8fafc",
+      "card": "#18181b",
+      "card_foreground": "#f8fafc",
+      "border": "#27272a",
+      "muted": "#27272a",
+      "muted_foreground": "#a1a1aa"
+    },
+    "palette": {
+      "primary": "#7C3AED",
+      "primary_foreground": "#ffffff",
+      "secondary": "#f3e8ff",
+      "secondary_foreground": "#7C3AED",
+      "accent": "#2dd4bf",
+      "accent_foreground": "#0f172a",
+      "destructive": "#ef4444",
+      "destructive_foreground": "#ffffff",
+      "ring": "#7C3AED"
+    }
+  },
+  "layout_strategy": {
+    "landing_page": {
+      "grid_type": "bento_tetris",
+      "container": "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8",
+      "spacing": "generous (py-20, gap-8)",
+      "hero_style": "split_screen_asymmetric",
+      "features_style": "zigzag_with_bento_cards"
+    },
+    "dashboard": {
+      "grid_type": "high_density",
+      "container": "fluid (w-full px-6 py-6)",
+      "sidebar_style": "glassmorphism_dark",
+      "card_style": "flat_border_minimal"
+    }
+  },
+  "components": {
+    "buttons": {
+      "style": "rounded-md",
+      "animation": "transform hover:-translate-y-0.5 transition-all duration-200",
+      "variants": {
+        "primary": "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20",
+        "secondary": "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        "ghost": "hover:bg-accent hover:text-accent-foreground"
+      }
+    },
+    "cards": {
+      "landing": "bg-card border border-border/50 shadow-sm hover:shadow-md transition-shadow duration-300 rounded-xl",
+      "dashboard": "bg-card/50 backdrop-blur-sm border border-white/5 rounded-lg"
+    },
+    "inputs": {
+      "style": "rounded-md border-input bg-background/50 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+    }
+  },
+  "visual_enhancers": {
+    "gradients": {
+      "hero_glow": "radial-gradient(circle at 50% 50%, rgba(124, 58, 237, 0.15) 0%, rgba(0, 0, 0, 0) 50%)",
+      "feature_card": "linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 100%)"
+    },
+    "textures": {
+      "noise": "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E\")"
+    },
+    "motion": {
+      "page_transition": "initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }}",
+      "stagger_children": 0.1
+    }
+  },
+  "image_urls": {
+    "hero_abstract": "https://images.pexels.com/photos/17483870/pexels-photo-17483870.png?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    "team_collaboration": "https://images.pexels.com/photos/6804068/pexels-photo-6804068.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    "feature_network": "https://images.pexels.com/photos/8108719/pexels-photo-8108719.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    "user_avatar_1": "https://images.pexels.com/photos/3228830/pexels-photo-3228830.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    "user_avatar_2": "https://images.pexels.com/photos/4565706/pexels-photo-4565706.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+  },
+  "instructions_to_main_agent": [
+    "INSTALL FONTS: Add '@import url(\"https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono&family=Outfit:wght@500;600;700&display=swap\");' to index.css.",
+    "APPLY THEME: Update 'tailwind.config.js' to use the specific colors defined in 'colors.palette' and extend the font family with Outfit as 'heading'.",
+    "LANDING PAGE: Build a 'Bento Grid' section for features using the 'bento_tetris' layout strategy.",
+    "DASHBOARD: Force dark mode for all dashboard routes (/dashboard/*) by wrapping the layout in a 'dark' class div.",
+    "COMPONENTS: Customize Shadcn components in 'components/ui' to match the 'rounded-md' and 'border-border/40' style.",
+    "Add 'data-testid' to all interactive elements."
+  ],
+  "universal_guidelines": [
+    "Do NOT use standard Shadcn cards without customization. Add hover effects and subtle borders.",
+    "Ensure 4.5:1 contrast ratio for text.",
+    "Use 'lucide-react' for all icons.",
+    "No emojis.",
+    "Use 'sonner' for toasts."
+  ]
+}
