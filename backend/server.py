@@ -10,7 +10,7 @@ import re
 import hashlib
 import numpy as np
 import httpx
-import litellm
+from sentence_transformers import SentenceTransformer
 from pathlib import Path
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
