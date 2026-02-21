@@ -283,6 +283,46 @@ export default function SandboxTab({ project }) {
     } catch { toast.error("Failed to init sandbox"); }
   };
 
+  /* ── Clear Chat (new conversation) ── */
+  const clearChat = useCallback(() => {
+    /* Close voice mode if active */
+    if (voiceModeRef.current) {
+      closeVoice();
+    }
+    
+    /* Clear messages */
+    setMessages([]);
+    setStreamingText("");
+    
+    /* Clear storage */
+    clearStorage();
+    
+    /* Reinitialize with new session */
+    initSession();
+    
+    toast.success("Started new chat");
+  }, [clearStorage, initSession]);
+
+  /* ── Switch memory mode ── */
+  const switchMemoryMode = useCallback((newMode) => {
+    if (newMode === memoryMode) return;
+    
+    /* Clear current storage */
+    clearStorage();
+    
+    /* Switch mode */
+    setMemoryMode(newMode);
+    
+    /* Clear messages and start fresh */
+    setMessages([]);
+    setStreamingText("");
+    
+    /* Reinitialize */
+    setTimeout(() => initSession(), 100);
+    
+    toast.success(`Switched to ${newMode === 'session' ? 'Session' : 'Persistent'} Memory`);
+  }, [memoryMode, clearStorage, initSession]);
+
   /* ── Web Audio API for real mic visualization ── */
   const setupMicVisualization = useCallback(() => {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
