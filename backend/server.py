@@ -907,3 +907,144 @@ async def extract_text_from_file(file_bytes: bytes, filename: str) -> str:
         return file_bytes.decode('utf-8', errors='ignore')
     else:
         raise Exception(f"Unsupported file type: {ext}")
+
+# ─── Document Upload Endpoint ───
+@api_router.post("/projects/{project_id}/knowledge/upload")
+async def upload_document(
+    project_id: str,
+    file: UploadFile = File(...),
+    user: dict = Depends(get_current_user)
+):
+    """Upload and process document (PDF, DOCX, PPTX, TXT, XLSX)"""
+    await get_project_for_user(project_id, user)
+    
+    # Validate file type
+    allowed_extensions = ['pdf', 'docx', 'pptx', 'txt', 'xlsx', 'xls']
+    file_ext = file.filename.lower().split('.')[-1]
+    if file_ext not in allowed_extensions:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file type. Allowed: {', '.join(allowed_extensions)}"
+        )
+    
+    # Read file
+    file_bytes = await file.read()
+    file_size = len(file_bytes)
+    
+    # Validate size (10MB max)
+    MAX_SIZE = 10 * 1024 * 1024  # 10 MB
+    if file_size > MAX_SIZE:
+        raise HTTPException(
+            status_code=400,
+            detail=f"File too large. Maximum size is 10 MB. Your file: {file_size / (1024*1024):.2f} MB"
+        )
+    
+    # Check for duplicate (same filename + size)
+    existing = await db.knowledge_sources.find_one({
+        "project_id": project_id,
+        "type": "document",
+        "file_name": file.filename,
+        "file_size": file_size
+    })
+    if existing:
+        raise HTTPException(
+            status_code=400,
+            detail="This file has already been uploaded. Delete the existing file first."
+        )
+    
+    # Create source record
+    source_id = gen_id("ks_")
+    source = {
+        "source_id": source_id,
+        "project_id": project_id,
+        "type": "document",
+        "file_name": file.filename,
+        "file_size": file_size,
+        "file_type": file_ext,
+        "title": file.filename,
+        "status": "processing",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.knowledge_sources.insert_one(source)
+    
+    try:
+        # Extract text
+        text = await extract_text_from_file(file_bytes, file.filename)
+        
+        if not text or len(text.strip()) < 10:
+            raise Exception("No meaningful text could be extracted from the document")
+        
+        # Chunk with metadata
+        chunks = chunk_text(text, chunk_size=600, overlap=100)
+        
+        # Generate embeddings and store
+        for i, chunk in enumerate(chunks):
+            embedding = await get_embedding(chunk)
+            await db.knowledge_chunks.insert_one({
+                "chunk_id": gen_id("ck_"),
+                "source_id": source_id,
+                "project_id": project_id,
+                "content": chunk,
+                "embedding": embedding,
+                "source_title": file.filename,
+                "source_type": "document",
+                "file_name": file.filename,
+                "chunk_index": i,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            })
+        
+        # Update source as completed
+        await db.knowledge_sources.update_one(
+            {"source_id": source_id},
+            {"$set": {
+                "status": "completed",
+                "chunk_count": len(chunks),
+                "text_length": len(text)
+            }}
+        )
+        
+    except Exception as e:
+        logger.error(f"Document processing error: {e}")
+        await db.knowledge_sources.update_one(
+            {"source_id": source_id},
+            {"$set": {"status": "failed", "error": str(e)}}
+        )
+        raise HTTPException(status_code=500, detail=f"Failed to process document: {str(e)}")
+    
+    source_doc = await db.knowledge_sources.find_one({"source_id": source_id}, {"_id": 0})
+    return source_doc
+
+# ─── List Files Endpoint ───
+@api_router.get("/projects/{project_id}/knowledge/files")
+async def list_files(project_id: str, user: dict = Depends(get_current_user)):
+    """List all uploaded document files"""
+    await get_project_for_user(project_id, user)
+    files = await db.knowledge_sources.find(
+        {"project_id": project_id, "type": "document"},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(100)
+    return files
+
+# ─── Delete File Endpoint ───
+@api_router.delete("/projects/{project_id}/knowledge/files/{file_id}")
+async def delete_file(project_id: str, file_id: str, user: dict = Depends(get_current_user)):
+    """Delete uploaded file and its vectors"""
+    await get_project_for_user(project_id, user)
+    
+    # Delete source
+    result = await db.knowledge_sources.delete_one({
+        "source_id": file_id,
+        "project_id": project_id,
+        "type": "document"
+    })
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    # Delete all chunks/vectors
+    await db.knowledge_chunks.delete_many({
+        "source_id": file_id,
+        "project_id": project_id
+    })
+    
+    return {"message": "File and its knowledge vectors deleted successfully"}
