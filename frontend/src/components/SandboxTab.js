@@ -254,9 +254,16 @@ export default function SandboxTab({ project }) {
       return;
     }
     stopTTS();
+    /* Stop any lingering recognition before starting a new one */
+    if (recognitionRef.current) {
+      try { recognitionRef.current.stop(); } catch {}
+      recognitionRef.current = null;
+    }
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     const r  = new SR();
-    r.continuous     = true;
+    /* continuous:false = one clean utterance, avoids the onend race condition
+       interimResults:true = live transcript while the user speaks            */
+    r.continuous     = false;
     r.interimResults = true;
     r.lang = "";
 
@@ -266,29 +273,22 @@ export default function SandboxTab({ project }) {
     };
 
     r.onresult = (e) => {
-      let interim = "", finalTxt = "";
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        if (e.results[i].isFinal) finalTxt += e.results[i][0].transcript;
-        else                       interim  += e.results[i][0].transcript;
-      }
-      setLiveText(interim || finalTxt);
-      if (finalTxt) {
-        clearTimeout(silenceTimer.current);
-        const captured = finalTxt.trim();
-        silenceTimer.current = setTimeout(() => {
-          if (recognitionRef.current) { try { recognitionRef.current.stop(); } catch {} }
-          sendText(captured);
-        }, 800);
+      /* Use the most recent result */
+      const res = e.results[e.results.length - 1];
+      const txt = res[0].transcript;
+      setLiveText(txt);
+      /* Send immediately on isFinal — browser is confident */
+      if (res.isFinal && txt.trim()) {
+        sendText(txt.trim());
       }
     };
 
     r.onerror = (e) => {
-      clearTimeout(silenceTimer.current);
-      if (e.error !== "no-speech") setVState("idle");
+      if (e.error !== "no-speech" && e.error !== "aborted") setVState("idle");
     };
 
+    /* onend fires naturally after the single utterance completes */
     r.onend = () => {
-      clearTimeout(silenceTimer.current);
       setLiveText("");
       if (vStateRef.current === "listening") setVState("idle");
     };
