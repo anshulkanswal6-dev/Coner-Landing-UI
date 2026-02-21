@@ -739,7 +739,7 @@ export default function SandboxTab({ project }) {
             {[
               { color: "#7C3AED", label: "Idle" },
               { color: "#ef4444", label: "Listening" },
-              { color: "#9333ea", label: "Processing" },
+              { color: "#171717", label: "Processing", ring: "#7C3AED" },
               { color: "#14b8a6", label: "Speaking" },
             ].map((s) => (
               <div key={s.label} className="flex items-center gap-2 text-xs text-zinc-500">
