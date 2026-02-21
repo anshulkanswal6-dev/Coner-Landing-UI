@@ -235,13 +235,51 @@ export default function SandboxTab({ project }) {
     }
   }, [islandPhase]);
 
+  /* ── Storage helpers (mode-aware) ── */
+  const getStorage = useCallback(() => {
+    return memoryMode === 'persistent' ? localStorage : sessionStorage;
+  }, [memoryMode]);
+
+  const STORAGE_KEY = `sb_data_${project.project_id}`;
+
+  const saveToStorage = useCallback((sid, msgs) => {
+    try {
+      getStorage().setItem(STORAGE_KEY, JSON.stringify({ sid, msgs: msgs.slice(-50) }));
+    } catch {}
+  }, [getStorage, STORAGE_KEY]);
+
+  const loadFromStorage = useCallback(() => {
+    try {
+      return JSON.parse(getStorage().getItem(STORAGE_KEY));
+    } catch {
+      return null;
+    }
+  }, [getStorage, STORAGE_KEY]);
+
+  const clearStorage = useCallback(() => {
+    try {
+      getStorage().removeItem(STORAGE_KEY);
+    } catch {}
+  }, [getStorage, STORAGE_KEY]);
+
   const initSession = async () => {
+    /* Try to load from storage first */
+    const saved = loadFromStorage();
+    
     try {
       const res = await fetch(`${API}/projects/${project.project_id}/sandbox/init`, { method: "POST", credentials: "include" });
       const d = await res.json();
       setSessionId(d.session_id);
       sessionRef.current = d.session_id;
-      setMessages([{ role: "assistant", content: d.welcome_message, id: "welcome" }]);
+      
+      /* Restore saved messages if available */
+      if (saved && saved.msgs && saved.msgs.length > 0) {
+        setMessages(saved.msgs);
+      } else {
+        setMessages([{ role: "assistant", content: d.welcome_message, id: "welcome" }]);
+      }
+      
+      saveToStorage(d.session_id, saved?.msgs || [{ role: "assistant", content: d.welcome_message, id: "welcome" }]);
     } catch { toast.error("Failed to init sandbox"); }
   };
 
