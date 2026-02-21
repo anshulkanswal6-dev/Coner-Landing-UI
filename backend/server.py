@@ -1048,3 +1048,294 @@ async def delete_file(project_id: str, file_id: str, user: dict = Depends(get_cu
     })
     
     return {"message": "File and its knowledge vectors deleted successfully"}
+
+# ─── Enhanced Website Crawler with Navigation Intelligence ───
+from urllib.parse import urlparse, urljoin
+
+async def crawl_website_with_navigation(base_url: str, max_pages: int = 50) -> tuple:
+    """
+    Crawl website and extract:
+    1. Page content
+    2. Navigation structure (links, hierarchy, menu)
+    
+    Returns: (content_chunks, navigation_data)
+    """
+    try:
+        visited = set()
+        to_visit = [base_url]
+        domain = urlparse(base_url).netloc
+        
+        all_content = []
+        navigation_map = {}
+        site_structure = {"pages": {}, "links": []}
+        
+        async with httpx.AsyncClient(timeout=30, follow_redirects=True) as client:
+            while to_visit and len(visited) < max_pages:
+                url = to_visit.pop(0)
+                
+                if url in visited:
+                    continue
+                
+                try:
+                    resp = await client.get(url)
+                    if resp.status_code != 200:
+                        continue
+                    
+                    visited.add(url)
+                    html = resp.text
+                    soup = BeautifulSoup(html, "html.parser")
+                    
+                    # Extract page title
+                    page_title = soup.title.string if soup.title else url
+                    
+                    # Extract navigation elements
+                    nav_links = []
+                    for nav in soup.find_all(['nav', 'menu']):
+                        for link in nav.find_all('a', href=True):
+                            link_text = link.get_text(strip=True)
+                            link_href = urljoin(url, link['href'])
+                            if link_text and link_href:
+                                nav_links.append({"text": link_text, "url": link_href})
+                    
+                    # Extract breadcrumbs
+                    breadcrumbs = []
+                    for bc in soup.find_all(class_=re.compile('breadcrumb', re.I)):
+                        for link in bc.find_all('a'):
+                            breadcrumbs.append(link.get_text(strip=True))
+                    
+                    # Store page info
+                    site_structure["pages"][url] = {
+                        "title": page_title,
+                        "nav_links": nav_links,
+                        "breadcrumbs": breadcrumbs
+                    }
+                    
+                    # Extract main content
+                    for tag in soup(['script', 'style', 'nav', 'footer', 'header']):
+                        tag.decompose()
+                    
+                    text = soup.get_text(separator="\n", strip=True)
+                    text = re.sub(r'\n{3,}', '\n\n', text)
+                    
+                    if text.strip():
+                        all_content.append({
+                            "url": url,
+                            "title": page_title,
+                            "content": text
+                        })
+                    
+                    # Find internal links
+                    for link in soup.find_all('a', href=True):
+                        href = urljoin(url, link['href'])
+                        parsed = urlparse(href)
+                        
+                        # Only follow same-domain links
+                        if parsed.netloc == domain and href not in visited and href not in to_visit:
+                            # Avoid common non-content URLs
+                            if not any(skip in href.lower() for skip in ['#', 'javascript:', 'mailto:', '.pdf', '.zip']):
+                                to_visit.append(href)
+                                site_structure["links"].append({
+                                    "from": url,
+                                    "to": href,
+                                    "text": link.get_text(strip=True)
+                                })
+                
+                except Exception as e:
+                    logger.error(f"Error crawling {url}: {e}")
+                    continue
+        
+        # Generate navigation intelligence
+        navigation_chunks = generate_navigation_chunks(site_structure)
+        
+        return all_content, navigation_chunks
+        
+    except Exception as e:
+        raise Exception(f"Website crawl failed: {str(e)}")
+
+def generate_navigation_chunks(site_structure: dict) -> List[dict]:
+    """
+    Generate structured navigation guidance from site structure.
+    Example: "How to apply for driving licence" → step-by-step navigation
+    """
+    nav_chunks = []
+    
+    # Analyze navigation patterns
+    pages = site_structure.get("pages", {})
+    links = site_structure.get("links", [])
+    
+    # Create task-based navigation from common patterns
+    for url, page_data in pages.items():
+        title = page_data.get("title", "")
+        nav_links = page_data.get("nav_links", [])
+        breadcrumbs = page_data.get("breadcrumbs", [])
+        
+        # Generate navigation instruction
+        if breadcrumbs:
+            nav_text = f"To reach '{title}':\n"
+            nav_text += "Path: " + " → ".join(breadcrumbs) + "\n"
+            
+            if nav_links:
+                nav_text += "Available options from this page:\n"
+                for link in nav_links[:10]:  # Limit to 10
+                    nav_text += f"- {link['text']}\n"
+            
+            nav_chunks.append({
+                "content": nav_text,
+                "page_title": title,
+                "type": "navigation"
+            })
+    
+    # Create link-based navigation
+    link_text = "Website navigation map:\n"
+    for link in links[:100]:  # Limit to avoid huge chunks
+        if link.get("text"):
+            link_text += f"- {link['text']} (from {link['from']} to {link['to']})\n"
+    
+    if link_text:
+        nav_chunks.append({
+            "content": link_text,
+            "type": "navigation_map"
+        })
+    
+    return nav_chunks
+
+# ─── Website Sync Endpoints ───
+@api_router.post("/projects/{project_id}/knowledge/sync")
+async def sync_website(project_id: str, user: dict = Depends(get_current_user)):
+    """
+    Manually trigger website re-sync.
+    Crawls website, extracts content + navigation, updates knowledge base.
+    """
+    project = await get_project_for_user(project_id, user)
+    
+    # Get website URL from existing URL-type knowledge sources
+    url_sources = await db.knowledge_sources.find({
+        "project_id": project_id,
+        "type": "url"
+    }).to_list(10)
+    
+    if not url_sources:
+        raise HTTPException(
+            status_code=400,
+            detail="No website URL found. Add a website URL first via Knowledge > Website."
+        )
+    
+    # Use the first URL as base
+    base_url = url_sources[0].get("url")
+    
+    # Mark sync as in progress
+    sync_id = gen_id("sync_")
+    sync_record = {
+        "sync_id": sync_id,
+        "project_id": project_id,
+        "status": "in_progress",
+        "started_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.website_syncs.insert_one(sync_record)
+    
+    try:
+        # Delete old website-sourced chunks (preserve documents)
+        await db.knowledge_chunks.delete_many({
+            "project_id": project_id,
+            "source_type": {"$in": ["url", "navigation"]}
+        })
+        
+        # Crawl website
+        content_pages, navigation_chunks = await crawl_website_with_navigation(base_url, max_pages=30)
+        
+        total_chunks = 0
+        
+        # Process content pages
+        for page in content_pages:
+            source_id = gen_id("ks_")
+            
+            # Create temporary source for this page
+            await db.knowledge_sources.update_one(
+                {"project_id": project_id, "url": page["url"], "type": "url"},
+                {"$set": {
+                    "source_id": source_id,
+                    "title": page["title"],
+                    "status": "completed",
+                    "updated_at": datetime.now(timezone.utc).isoformat()
+                }},
+                upsert=True
+            )
+            
+            # Chunk content
+            chunks = chunk_text(page["content"], chunk_size=600, overlap=100)
+            
+            for i, chunk in enumerate(chunks):
+                embedding = await get_embedding(chunk)
+                await db.knowledge_chunks.insert_one({
+                    "chunk_id": gen_id("ck_"),
+                    "source_id": source_id,
+                    "project_id": project_id,
+                    "content": chunk,
+                    "embedding": embedding,
+                    "source_title": page["title"],
+                    "source_type": "url",
+                    "url": page["url"],
+                    "chunk_index": i,
+                    "created_at": datetime.now(timezone.utc).isoformat()
+                })
+                total_chunks += 1
+        
+        # Process navigation chunks
+        nav_source_id = gen_id("ks_")
+        for nav_chunk in navigation_chunks:
+            embedding = await get_embedding(nav_chunk["content"])
+            await db.knowledge_chunks.insert_one({
+                "chunk_id": gen_id("ck_"),
+                "source_id": nav_source_id,
+                "project_id": project_id,
+                "content": nav_chunk["content"],
+                "embedding": embedding,
+                "source_title": "Website Navigation",
+                "source_type": "navigation",
+                "chunk_index": 0,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            })
+            total_chunks += 1
+        
+        # Update sync record
+        await db.website_syncs.update_one(
+            {"sync_id": sync_id},
+            {"$set": {
+                "status": "completed",
+                "completed_at": datetime.now(timezone.utc).isoformat(),
+                "pages_crawled": len(content_pages),
+                "chunks_created": total_chunks
+            }}
+        )
+        
+        return {
+            "message": "Website synced successfully",
+            "pages_crawled": len(content_pages),
+            "chunks_created": total_chunks,
+            "sync_id": sync_id
+        }
+        
+    except Exception as e:
+        logger.error(f"Website sync error: {e}")
+        await db.website_syncs.update_one(
+            {"sync_id": sync_id},
+            {"$set": {
+                "status": "failed",
+                "error": str(e),
+                "completed_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        raise HTTPException(status_code=500, detail=f"Website sync failed: {str(e)}")
+
+@api_router.get("/projects/{project_id}/knowledge/sync/status")
+async def get_sync_status(project_id: str, user: dict = Depends(get_current_user)):
+    """Get last sync status and timestamp"""
+    await get_project_for_user(project_id, user)
+    
+    last_sync = await db.website_syncs.find_one(
+        {"project_id": project_id},
+        {"_id": 0},
+        sort=[("started_at", -1)]
+    )
+    
+    return last_sync if last_sync else {"status": "never_synced"}
