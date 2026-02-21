@@ -964,6 +964,11 @@ $('ep-close').onclick=function(){
   fab.innerHTML=SVG_CHAT;
 };
 
+/* New Chat button */
+$('ep-new-chat').onclick=function(){
+  clearChat();
+};
+
 /* Input */
 inp.oninput=function(){sendBtn.disabled=!inp.value.trim()||SENDING;};
 inp.onkeydown=function(e){if(e.key==='Enter'&&!SENDING)sendText(inp.value.trim());};
