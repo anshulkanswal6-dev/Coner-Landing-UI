@@ -390,7 +390,7 @@ root.innerHTML=
 '<div class="ep-vi-wave" id="ep-vi-wave" data-s="idle">'+WAVE_SVG+'</div>'+
 
 /* FAB */
-'<button class="ep-fab" id="ep-fab" style="background:var(--ep-c,#7C3AED)">'+SVG_CHAT+'</button>';
+'<button class="ep-fab" id="ep-fab">'+SVG_CHAT+'</button>';
 
 document.body.appendChild(root);
 
