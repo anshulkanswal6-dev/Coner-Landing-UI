@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Bot, User, ThumbsUp, ThumbsDown } from "lucide-react";
+import { Send, Bot, User, ThumbsUp, ThumbsDown, RotateCcw, Database, HardDrive } from "lucide-react";
 import { toast } from "sonner";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
