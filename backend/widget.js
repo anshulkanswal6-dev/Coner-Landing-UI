@@ -12,6 +12,16 @@ var VSTATE='idle'; // idle | listening | processing | speaking
 var LAST_FINAL_TXT='',LAST_FINAL_TIME=0,SILENCE_TIMER=null,CURR_UTT=null;
 /* Preview detection: in an iframe = Emergent sandbox/preview, top-level = production embed */
 var IS_IFRAME=(window.self!==window.top);
+/* Voice selection */
+var SELECTED_VOICE=null,VOICE_READY=false;
+/* TTS queue for sentence chunking */
+var TTS_QUEUE=[],TTS_ACTIVE=false;
+/* Web Audio API for real mic visualization */
+var AUDIO_CTX=null,ANALYSER=null,MIC_STREAM=null,ANIM_FRAME=null;
+/* SSE stream reference for cleanup */
+var ACTIVE_SSE_READER=null;
+/* Debounce localStorage */
+var SAVE_TIMEOUT=null;
 
 /* ── Persistence ── */
 var LS_KEY='ep_data_'+PK;
