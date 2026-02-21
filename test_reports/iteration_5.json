@@ -56,8 +56,7 @@
   ],
   "critical_code_review_comments": [
     "SandboxTab.js is 760 lines — approaching the 700-line limit. Consider splitting voice island JSX into a VoiceIsland sub-component for maintainability.",
-    "Processing state color mismatch: SandboxTab legend shows #9333ea (purple) but orbBg for processing is rgba(12,12,16,.9) (near-black). The widget.js also uses near-black for processing. Consider aligning the legend or using the actual spinner-on-dark visual.",
-    "widget.js closeVoice() has a bug: after morph island→FAB, it sets `fab.innerHTML=SVG_X_16` (close X icon) instead of `SVG_CHAT` (chat bubble). Should be fab.innerHTML=SVG_CHAT after closing voice mode so FAB shows the chat bubble again."
+    "Processing state color mismatch: SandboxTab legend shows #9333ea (purple) but orbBg for processing is rgba(12,12,16,.9) (near-black). The widget.js also uses near-black for processing. Consider aligning the legend with the actual near-black + purple spinner visual."
   ],
   "updated_files": [
     "/app/backend/tests/test_voice_island.py"
