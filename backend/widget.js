@@ -25,15 +25,33 @@ var ACTIVE_SSE_READER=null;
 /* Debounce localStorage */
 var SAVE_TIMEOUT=null;
 
-/* ── Persistence (debounced) ── */
+/* ── Persistence (debounced, mode-aware) ── */
 var LS_KEY='ep_data_'+PK;
+var STORAGE=null; // Will be set based on MEMORY_MODE
+
+function getStorage(){
+  if(!STORAGE){
+    STORAGE=(MEMORY_MODE==='persistent')?localStorage:sessionStorage;
+  }
+  return STORAGE;
+}
+
 function saveLocal(){
   clearTimeout(SAVE_TIMEOUT);
   SAVE_TIMEOUT=setTimeout(function(){
-    try{localStorage.setItem(LS_KEY,JSON.stringify({sid:SID,msgs:MSGS.slice(-50)}));}catch(e){}
+    try{getStorage().setItem(LS_KEY,JSON.stringify({sid:SID,msgs:MSGS.slice(-50)}));}catch(e){}
   },300);
 }
-function loadLocal(){try{return JSON.parse(localStorage.getItem(LS_KEY));}catch(e){return null;}}
+
+function loadLocal(){
+  try{return JSON.parse(getStorage().getItem(LS_KEY));}catch(e){return null;}
+}
+
+function clearStorage(){
+  try{
+    getStorage().removeItem(LS_KEY);
+  }catch(e){}
+}
 
 /* ── CSS ── */
 var css=document.createElement('style');
