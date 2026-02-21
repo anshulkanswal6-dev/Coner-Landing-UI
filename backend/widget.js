@@ -7,9 +7,11 @@ if(!PK)return;
 var API=new URL(script.src).origin+'/api';
 
 /* ── State ── */
-var SID=null,CFG={},MSGS=[],OPEN=false,VOICE=false,SENDING=false,MUTED=false,RECOG=null;
+var SID=null,CFG={},MSGS=[],OPEN=false,VOICE=false,SENDING=false,MUTED=false,RECOG=null,IREC=null;
 var VSTATE='idle'; // idle | listening | processing | speaking
 var LAST_FINAL_TXT='',LAST_FINAL_TIME=0,SILENCE_TIMER=null,CURR_UTT=null;
+/* Preview detection: in an iframe = Emergent sandbox/preview, top-level = production embed */
+var IS_IFRAME=(window.self!==window.top);
 
 /* ── Persistence ── */
 var LS_KEY='ep_data_'+PK;
