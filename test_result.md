@@ -216,3 +216,5 @@ test_plan:
 agent_communication:
   - agent: "main"
     message: "Previous agent implemented 5 critical voice mode fixes but did NOT test them. All 5 fixes need comprehensive frontend testing. Voice mode has regressed multiple times - verify carefully. Use Emergent Google Auth for login. Test in sandbox tab at /dashboard/proj_{id}. Focus on browser SpeechRecognition API behavior and state transitions."
+  - agent: "testing"
+    message: "CRITICAL TESTING RESULTS - Authentication blocker prevented live UI testing. Performed comprehensive CODE REVIEW instead. FINDINGS: (1) FIX 1 FAILED - SandboxTab.js lines 226-228 has auto-restart WITHOUT iframe/preview detection, causing regression in sandbox. widget.js correctly implemented IS_IFRAME check. (2) FIX 2-5 PASSED code review - properly implemented. REQUIRED ACTION: Add preview/iframe detection to SandboxTab.js and disable auto-restart when in sandbox/preview mode. See detailed comments in status_history for each task."
