@@ -231,15 +231,47 @@ export default function SandboxTab({ project }) {
 
   /* ── Clear Chat (new conversation) ── */
   const clearChat = useCallback(() => {
-    /* Close voice mode if active */
+    /* Close voice mode if active - using refs to avoid dependencies */
     if (voiceModeRef.current) {
+      voiceModeRef.current = false;
       setVoiceMode(false);
       setIslandPhase("");
-      stopListening();
-      stopTTS();
+      vStateRef.current = 'idle';
+      setVStateR('idle');
+      
+      /* Stop recognition if active */
+      if (recognitionRef.current) {
+        try { recognitionRef.current.stop(); } catch {}
+        recognitionRef.current = null;
+      }
+      
+      /* Stop TTS if active */
+      ttsActive.current = false;
+      ttsQueue.current = [];
+      if (utteranceRef.current) {
+        utteranceRef.current.onend = null;
+        utteranceRef.current.onerror = null;
+        utteranceRef.current = null;
+      }
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      
+      /* Clean up mic visualization */
+      if (animFrameRef.current) {
+        cancelAnimationFrame(animFrameRef.current);
+        animFrameRef.current = null;
+      }
+      if (micStreamRef.current) {
+        micStreamRef.current.getTracks().forEach(t => t.stop());
+        micStreamRef.current = null;
+      }
+      if (audioCtxRef.current) {
+        audioCtxRef.current.close();
+        audioCtxRef.current = null;
+      }
+      analyserRef.current = null;
+      
       setMuted(false);
       mutedRef.current = false;
-      stopMicVisualization();
     }
     
     /* Clear messages */
@@ -253,30 +285,7 @@ export default function SandboxTab({ project }) {
     initSession();
     
     toast.success("Started new chat");
-  }, [clearStorage, initSession, stopListening, stopTTS, stopMicVisualization]);
-
-  /* ── Switch memory mode ── */
-  const switchMemoryMode = useCallback((newMode) => {
-    if (newMode === memoryMode) return;
-    
-    /* Clear current storage */
-    clearStorage();
-    
-    /* Switch mode */
-    setMemoryMode(newMode);
-    
-    /* Clear messages and start fresh */
-    setMessages([]);
-    setStreamingText("");
-    
-    /* Reinitialize */
-    setTimeout(() => initSession(), 100);
-    
-    toast.success(`Switched to ${newMode === 'session' ? 'Session' : 'Persistent'} Memory`);
-  }, [memoryMode, clearStorage, initSession]);
-
-  /* Scroll to bottom on new messages */
-  useEffect(() => { messagesEnd.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, streamingText]);
+  }, [clearStorage, initSession]);
 
   /* Auto-save messages to storage */
   useEffect(() => {
