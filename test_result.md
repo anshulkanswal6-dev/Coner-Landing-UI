@@ -141,15 +141,18 @@ frontend:
   
   - task: "Voice Mode - Unified History"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/widget.js, /app/frontend/src/components/tabs/SandboxTab.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "FORK 4 - Voice messages now appear in main chat when voice island closes"
+      - working: true
+        agent: "testing"
+        comment: "Code review confirms proper implementation. widget.js line 497: 'renderMsg(\"bot\",full,mid,true);' renders to shared MSGS array. SandboxTab.js uses unified 'messages' state (useState), voice messages added to same array as text messages. Both implementations correctly maintain unified history."
   
   - task: "Voice Mode - Interruptible AI Speech"
     implemented: true
