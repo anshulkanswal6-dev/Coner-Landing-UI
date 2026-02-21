@@ -492,7 +492,11 @@ function sendText(txt){
         fb.querySelectorAll('button').forEach(function(btn){btn.onclick=function(){sendFb(mid,+btn.getAttribute('data-v'));btn.classList.add('active');};});
         if(s)s.appendChild(fb);
       }
-      if(VOICE&&full){MSGS.push({role:'bot',text:full,id:mid});speakTTS(full);}
+      if(VOICE&&full){
+        /* Render to shared chat store so history is visible when chat reopens */
+        renderMsg('bot',full,mid,true);
+        speakTTS(full);
+      }
       else if(VOICE)setVState('idle');
       SENDING=false;sendBtn.disabled=!inp.value.trim();
       saveLocal();
