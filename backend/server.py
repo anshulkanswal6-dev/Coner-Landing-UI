@@ -803,38 +803,6 @@ async def create_correction(project_id: str, data: CorrectionCreate, user: dict 
 async def root():
     return {"message": "EmergentPulse AI API", "version": "1.0.0"}
 
-app.include_router(api_router)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-@app.on_event("startup")
-async def startup():
-    await db.users.create_index("email", unique=True)
-    await db.users.create_index("user_id", unique=True)
-    await db.user_sessions.create_index("session_token")
-    await db.projects.create_index("user_id")
-    await db.projects.create_index("api_key", unique=True)
-    await db.knowledge_sources.create_index("project_id")
-    await db.knowledge_chunks.create_index("project_id")
-    await db.knowledge_chunks.create_index("source_id")
-    await db.conversations.create_index("project_id")
-    await db.conversations.create_index("session_id", unique=True)
-    await db.messages.create_index("session_id")
-    await db.messages.create_index("project_id")
-    await db.leads.create_index("project_id")
-    await db.corrections.create_index("project_id")
-    logger.info("EmergentPulse AI backend started")
-
-@app.on_event("shutdown")
-async def shutdown():
-    client.close()
-
 # ─── Document Parser Functions ───
 import io
 from PyPDF2 import PdfReader
@@ -1339,3 +1307,35 @@ async def get_sync_status(project_id: str, user: dict = Depends(get_current_user
     )
     
     return last_sync if last_sync else {"status": "never_synced"}
+app.include_router(api_router)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_credentials=True,
+    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.on_event("startup")
+async def startup():
+    await db.users.create_index("email", unique=True)
+    await db.users.create_index("user_id", unique=True)
+    await db.user_sessions.create_index("session_token")
+    await db.projects.create_index("user_id")
+    await db.projects.create_index("api_key", unique=True)
+    await db.knowledge_sources.create_index("project_id")
+    await db.knowledge_chunks.create_index("project_id")
+    await db.knowledge_chunks.create_index("source_id")
+    await db.conversations.create_index("project_id")
+    await db.conversations.create_index("session_id", unique=True)
+    await db.messages.create_index("session_id")
+    await db.messages.create_index("project_id")
+    await db.leads.create_index("project_id")
+    await db.corrections.create_index("project_id")
+    logger.info("EmergentPulse AI backend started")
+
+@app.on_event("shutdown")
+async def shutdown():
+    client.close()
+
