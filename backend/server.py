@@ -503,6 +503,7 @@ async def delete_knowledge(project_id: str, source_id: str, user: dict = Depends
 async def widget_init(request: Request):
     api_key = request.headers.get("x-project-key", "")
     project = await get_project_by_api_key(api_key)
+    validate_widget_origin(request, project)
     session_id = gen_id("ses_")
     await db.conversations.insert_one({
         "session_id": session_id, "project_id": project["project_id"],
@@ -533,118 +534,115 @@ async def widget_message(data: ChatMessageRequest, request: Request):
         "created_at": datetime.now(timezone.utc).isoformat()
     })
 
-    # RAG: embed query, search chunks, search corrections
-    query_embedding = await get_embedding(data.content)
+    ctx = await build_chat_context(project, data.session_id, data.content, data.current_url)
 
-    # Check corrections first
-    correction = await search_corrections(project_id, query_embedding)
-    if correction:
+    if ctx["type"] == "correction":
         assistant_msg_id = gen_id("msg_")
         await db.messages.insert_one({
             "message_id": assistant_msg_id, "session_id": data.session_id, "project_id": project_id,
-            "role": "assistant", "content": correction, "source": "correction",
+            "role": "assistant", "content": ctx["content"], "source": "correction",
             "created_at": datetime.now(timezone.utc).isoformat()
         })
         await db.conversations.update_one({"session_id": data.session_id}, {"$inc": {"message_count": 2}})
-        return {"message_id": assistant_msg_id, "content": correction, "source": "correction"}
-
-    # Search knowledge
-    relevant_chunks = await search_similar_chunks(project_id, query_embedding, top_k=5)
-    context = "\n\n".join([f"[Source: {c['source']}]\n{c['content']}" for c in relevant_chunks if c['score'] > 0.3])
-
-    # Get conversation history
-    history = await db.messages.find(
-        {"session_id": data.session_id},
-        {"_id": 0, "role": 1, "content": 1}
-    ).sort("created_at", 1).to_list(20)
-
-    # Build system prompt with golden rules
-    rules = project.get("golden_rules", {})
-    preset = rules.get("preset_rules", {})
-    custom = rules.get("custom_rules", [])
-    rules_text = ""
-    if preset.get("professional_tone"):
-        rules_text += "- Always maintain a professional and friendly tone.\n"
-    if preset.get("never_mention_competitors"):
-        rules_text += "- Never mention or compare with competitors.\n"
-    if preset.get("dont_discuss_pricing"):
-        rules_text += "- Do not discuss specific pricing details. Direct to sales team.\n"
-    if preset.get("stay_on_topic"):
-        rules_text += "- Stay on topic. Only answer questions related to the business.\n"
-    if preset.get("be_concise"):
-        rules_text += "- Keep responses concise and clear.\n"
-    if preset.get("ask_before_assuming"):
-        rules_text += "- Ask clarifying questions before making assumptions.\n"
-    for r in custom:
-        rules_text += f"- {r}\n"
-
-    mode = project.get("agent_mode", "support")
-    mode_instruction = ""
-    if mode == "acquisition":
-        mode_instruction = """You are in ACQUISITION mode. Your goal is to qualify the visitor as a lead.
-Naturally collect: name, email, phone, and requirements through conversation.
-When you have this information, include it as JSON at the end: {"lead": {"name": "...", "email": "...", "phone": "...", "requirements": "..."}}"""
-    else:
-        mode_instruction = "You are in SUPPORT mode. Help the user with their questions using the knowledge base."
-
-    system_prompt = f"""You are an AI assistant for "{project['name']}". {project.get('description', '')}
-
-{mode_instruction}
-
-RULES:
-{rules_text}
-
-KNOWLEDGE BASE CONTEXT:
-{context if context else "No relevant knowledge found. Answer based on general knowledge but stay within the business scope."}
-
-If the user's current page URL is provided, you can suggest navigation.
-Current URL: {data.current_url or 'Not provided'}
-
-Respond in markdown format when helpful. Be helpful, accurate, and follow all rules strictly."""
-
-    # Build messages for LLM
-    chat_messages = [{"role": "system", "content": system_prompt}]
-    for h in history[-10:]:
-        chat_messages.append({"role": h["role"], "content": h["content"] if isinstance(h["content"], str) else str(h["content"])})
+        return {"message_id": assistant_msg_id, "content": ctx["content"], "source": "correction"}
 
     try:
         chat = LlmChat(
             api_key=EMERGENT_LLM_KEY,
             session_id=f"widget_{data.session_id}",
-            system_message=system_prompt,
-            initial_messages=chat_messages
+            system_message=ctx["system_prompt"],
+            initial_messages=ctx["chat_messages"]
         ).with_model("openai", "gpt-4o-mini")
         response_text = await chat.send_message(UserMessage(text=data.content))
     except Exception as e:
         logger.error(f"LLM error: {e}")
         response_text = "I'm having trouble processing your request right now. Please try again in a moment."
 
-    # Extract lead if present
-    lead_match = re.search(r'\{"lead":\s*\{[^}]+\}\}', response_text)
-    if lead_match:
-        try:
-            import json
-            lead_data = json.loads(lead_match.group())["lead"]
-            await db.leads.insert_one({
-                "lead_id": gen_id("lead_"), "project_id": project_id,
-                "session_id": data.session_id, "name": lead_data.get("name", ""),
-                "email": lead_data.get("email", ""), "phone": lead_data.get("phone", ""),
-                "requirements": lead_data.get("requirements", ""), "status": "New",
-                "created_at": datetime.now(timezone.utc).isoformat()
-            })
-            response_text = response_text.replace(lead_match.group(), "").strip()
-        except Exception:
-            pass
+    response_text = await store_lead_if_present(response_text, project_id, data.session_id)
 
     assistant_msg_id = gen_id("msg_")
     await db.messages.insert_one({
         "message_id": assistant_msg_id, "session_id": data.session_id, "project_id": project_id,
         "role": "assistant", "content": response_text,
-        "chunks_used": len(relevant_chunks),
+        "chunks_used": ctx.get("chunks_used", 0),
         "created_at": datetime.now(timezone.utc).isoformat()
     })
     await db.conversations.update_one({"session_id": data.session_id}, {"$inc": {"message_count": 2}})
     return {"message_id": assistant_msg_id, "content": response_text, "source": "rag"}
+
+# ─── SSE Streaming Chat ───
+@api_router.post("/widget/message/stream")
+async def widget_message_stream(data: ChatMessageRequest, request: Request):
+    api_key = request.headers.get("x-project-key", "")
+    project = await get_project_by_api_key(api_key)
+    project_id = project["project_id"]
+    conv = await db.conversations.find_one({"session_id": data.session_id}, {"_id": 0})
+    if not conv:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    user_msg_id = gen_id("msg_")
+    await db.messages.insert_one({
+        "message_id": user_msg_id, "session_id": data.session_id, "project_id": project_id,
+        "role": "user", "content": data.content, "current_url": data.current_url,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+
+    ctx = await build_chat_context(project, data.session_id, data.content, data.current_url)
+
+    if ctx["type"] == "correction":
+        assistant_msg_id = gen_id("msg_")
+        await db.messages.insert_one({
+            "message_id": assistant_msg_id, "session_id": data.session_id, "project_id": project_id,
+            "role": "assistant", "content": ctx["content"], "source": "correction",
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+        await db.conversations.update_one({"session_id": data.session_id}, {"$inc": {"message_count": 2}})
+
+        async def correction_gen():
+            yield f"data: {json.dumps({'token': ctx['content']})}\n\n"
+            yield f"data: {json.dumps({'done': True, 'message_id': assistant_msg_id, 'content': ctx['content']})}\n\n"
+        return StreamingResponse(correction_gen(), media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+    # Stream via litellm
+    chat_messages = ctx["chat_messages"] + [{"role": "user", "content": data.content}]
+    assistant_msg_id = gen_id("msg_")
+
+    async def event_generator():
+        full_response = ""
+        try:
+            response = litellm.completion(
+                model="gpt-4o-mini",
+                messages=chat_messages,
+                api_key=EMERGENT_LLM_KEY,
+                api_base=EMERGENT_PROXY_URL,
+                custom_llm_provider="openai",
+                stream=True
+            )
+            for chunk in response:
+                delta = chunk.choices[0].delta
+                if hasattr(delta, 'content') and delta.content:
+                    token = delta.content
+                    full_response += token
+                    yield f"data: {json.dumps({'token': token})}\n\n"
+        except Exception as e:
+            logger.error(f"Streaming LLM error: {e}")
+            full_response = "I'm having trouble processing your request. Please try again."
+            yield f"data: {json.dumps({'token': full_response})}\n\n"
+
+        # Post-process: lead extraction, store message
+        final_text = await store_lead_if_present(full_response, project_id, data.session_id)
+        await db.messages.insert_one({
+            "message_id": assistant_msg_id, "session_id": data.session_id, "project_id": project_id,
+            "role": "assistant", "content": final_text,
+            "chunks_used": ctx.get("chunks_used", 0),
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+        await db.conversations.update_one({"session_id": data.session_id}, {"$inc": {"message_count": 2}})
+        yield f"data: {json.dumps({'done': True, 'message_id': assistant_msg_id, 'content': final_text})}\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 @api_router.post("/widget/feedback")
 async def widget_feedback(data: FeedbackRequest, request: Request):
