@@ -73,6 +73,23 @@ export default function SandboxTab({ project }) {
   const micBtnRef    = useRef(null);   // mic button in input bar
   const islandRef    = useRef(null);   // voice island div
   const messagesEnd  = useRef(null);
+  
+  /* Voice selection */
+  const selectedVoice = useRef(null);
+  const voiceReady    = useRef(false);
+  
+  /* TTS queue */
+  const ttsQueue      = useRef([]);
+  const ttsActive     = useRef(false);
+  
+  /* Web Audio API for real mic visualization */
+  const audioCtxRef   = useRef(null);
+  const analyserRef   = useRef(null);
+  const micStreamRef  = useRef(null);
+  const animFrameRef  = useRef(null);
+  
+  /* SSE cleanup */
+  const sseReaderRef  = useRef(null);
 
   /* Keep refs in sync with state */
   useEffect(() => { voiceModeRef.current = voiceMode; }, [voiceMode]);
