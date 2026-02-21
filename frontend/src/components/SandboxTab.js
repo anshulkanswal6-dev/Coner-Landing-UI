@@ -127,6 +127,9 @@ export default function SandboxTab({ project }) {
   const [input, setInput]             = useState("");
   const [sending, setSending]         = useState(false);
   const [streamingText, setStreamingText] = useState("");
+  
+  /* Memory mode: "session" (default) or "persistent" */
+  const [memoryMode, setMemoryMode]   = useState("session");
 
   /* Voice island state */
   const [voiceMode, setVoiceMode]     = useState(false);   // island visible?
