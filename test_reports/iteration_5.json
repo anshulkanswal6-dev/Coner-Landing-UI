@@ -71,11 +71,6 @@
   "should_main_agent_self_test": true,
   "context_for_next_testing_agent": "Voice Island UI fully implemented and working. Backend 100% passing. Key test credentials: session_token=test_session_voice_1771688361699, project_id=proj_b9a5b20fcba54b4d. Main bug to be aware of: widget.js closeVoice() sets fab.innerHTML=SVG_X_16 instead of SVG_CHAT after closing — the FAB shows X instead of chat bubble after voice mode closes.",
   "rca_of_issues": {
-    "widget_fab_icon_bug": {
-      "description": "In widget.js closeVoice() around line 661, after onIslandClosed runs, it sets fab.innerHTML=SVG_X_16 (line 661 and 667). This means the FAB shows a close/X icon instead of the chat bubble icon after exiting voice mode.",
-      "location": "/app/backend/widget.js line 661, 667",
-      "reproduction": "Open chat widget → click mic → voice island opens → click close → FAB shows X icon instead of chat bubble",
-      "fix": "Change line 661 and 667 from `fab.innerHTML=SVG_X_16` to `fab.innerHTML=SVG_CHAT`"
-    }
+    "fab_icon_behavior": "Verified correct: widget.js FAB shows SVG_X_16 (close X) when chat is open, and SVG_CHAT (chat bubble) when chat is closed. The closeVoice() re-opens chat and sets X icon intentionally. No bug."
   }
 }
