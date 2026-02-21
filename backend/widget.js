@@ -723,10 +723,17 @@ function startInterruptWatcher(){
   IREC.interimResults=true; // Detect speech immediately
   IREC.onresult=function(e){
     if(!TTS_ACTIVE)return;
-    var txt=(e.results[0]&&e.results[0][0]?e.results[0][0].transcript:'').trim();
+    /* Stop TTS immediately */
     stopTTS(); // Cancels all queued sentences + stops IREC
-    if(txt)sendText(txt);
-    else{setVState('idle');setTimeout(function(){if(VOICE&&!MUTED)startListening();},200);}
+    
+    /* Reset deduplication tracking for fresh input */
+    LAST_FINAL_TXT='';
+    LAST_FINAL_TIME=0;
+    
+    /* Start main listening flow to capture full sentence */
+    setTimeout(function(){
+      if(VOICE&&!MUTED)startListening();
+    },100);
   };
   IREC.onerror=function(){IREC=null;};
   IREC.onend=function(){
