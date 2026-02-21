@@ -83,6 +83,84 @@ export default function GoldenRulesTab({ projectId }) {
 
   return (
     <div data-testid="golden-rules-tab" className="space-y-6">
+      {/* Agent Mode Selector */}
+      <div className="bg-gradient-to-br from-[#7C3AED]/10 to-transparent border border-[#7C3AED]/20 rounded-lg p-5">
+        <h3 className="font-heading font-semibold mb-3 flex items-center gap-2">
+          <Target className="w-4 h-4 text-[#7C3AED]" />
+          Agent Mode
+        </h3>
+        <p className="text-xs text-zinc-400 mb-4">
+          Choose how your AI agent should interact with visitors
+        </p>
+        
+        <div className="grid md:grid-cols-2 gap-3">
+          {/* Support Mode Card */}
+          <button
+            data-testid="mode-support-btn"
+            onClick={() => updateAgentMode("support")}
+            className={`text-left p-4 rounded-lg border-2 transition-all ${
+              agentMode === "support"
+                ? "border-[#7C3AED] bg-[#7C3AED]/10"
+                : "border-white/10 bg-zinc-900/50 hover:border-white/20"
+            }`}
+          >
+            <div className="flex items-start gap-3">
+              <div className={`p-2 rounded-lg ${agentMode === "support" ? "bg-[#7C3AED]/20" : "bg-zinc-800"}`}>
+                <Headphones className={`w-5 h-5 ${agentMode === "support" ? "text-[#7C3AED]" : "text-zinc-500"}`} />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <h4 className="font-semibold text-sm">Support Mode</h4>
+                  {agentMode === "support" && (
+                    <span className="px-2 py-0.5 bg-[#7C3AED] text-white text-[10px] rounded-full">Active</span>
+                  )}
+                </div>
+                <p className="text-xs text-zinc-400 leading-relaxed">
+                  Help visitors with questions using your knowledge base. Best for customer support and FAQs.
+                </p>
+              </div>
+            </div>
+          </button>
+
+          {/* Acquisition Mode Card */}
+          <button
+            data-testid="mode-acquisition-btn"
+            onClick={() => updateAgentMode("acquisition")}
+            className={`text-left p-4 rounded-lg border-2 transition-all ${
+              agentMode === "acquisition"
+                ? "border-green-500 bg-green-500/10"
+                : "border-white/10 bg-zinc-900/50 hover:border-white/20"
+            }`}
+          >
+            <div className="flex items-start gap-3">
+              <div className={`p-2 rounded-lg ${agentMode === "acquisition" ? "bg-green-500/20" : "bg-zinc-800"}`}>
+                <Target className={`w-5 h-5 ${agentMode === "acquisition" ? "text-green-500" : "text-zinc-500"}`} />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <h4 className="font-semibold text-sm">Acquisition Mode</h4>
+                  {agentMode === "acquisition" && (
+                    <span className="px-2 py-0.5 bg-green-500 text-white text-[10px] rounded-full">Active</span>
+                  )}
+                </div>
+                <p className="text-xs text-zinc-400 leading-relaxed">
+                  Qualify visitors as leads. Naturally collects name, email, phone, and requirements.
+                </p>
+              </div>
+            </div>
+          </button>
+        </div>
+
+        {agentMode === "acquisition" && (
+          <div className="mt-4 p-3 bg-green-500/5 border border-green-500/20 rounded-lg">
+            <p className="text-xs text-green-400 flex items-center gap-2">
+              <Target className="w-3.5 h-3.5" />
+              <span>Leads will be captured automatically and appear in the <strong>Leads</strong> tab.</span>
+            </p>
+          </div>
+        )}
+      </div>
+
       {/* Preset Rules */}
       <div className="bg-zinc-900/50 border border-white/5 rounded-lg p-5">
         <h3 className="font-heading font-semibold mb-4 flex items-center gap-2">
