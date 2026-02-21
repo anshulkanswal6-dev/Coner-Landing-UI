@@ -776,6 +776,8 @@ function startListening(){
     setVState('listening');
     viUsr.textContent='';
     viUsr.classList.add('live');
+    /* Start real mic visualization if supported */
+    setupMicVisualization();
   };
 
   RECOG.onresult=function(e){
@@ -798,6 +800,7 @@ function startListening(){
      so this guard won't accidentally reset back to idle                       */
   RECOG.onend=function(){
     viUsr.classList.remove('live');
+    stopMicVisualization(); // Clean up Web Audio
     if(VSTATE==='listening')setVState('idle');
   };
 
@@ -805,6 +808,7 @@ function startListening(){
 }
 function stopListening(){
   clearTimeout(SILENCE_TIMER);
+  stopMicVisualization();
   if(RECOG){try{RECOG.stop();}catch(e){}RECOG=null;}
 }
 
