@@ -298,6 +298,8 @@ async def store_lead_if_present(response_text: str, project_id: str, session_id:
             lead_data = json.loads(lead_match.group())["lead"]
             lead_id = gen_id("lead_")
             
+            logger.info(f"[LEAD CAPTURE] Capturing lead {lead_id} for project {project_id}")
+            
             # NEW: Add summary_email_status field (Phase 1)
             await db.leads.insert_one({
                 "lead_id": lead_id, 
@@ -314,12 +316,15 @@ async def store_lead_if_present(response_text: str, project_id: str, session_id:
             
             # NEW: Trigger email summary worker (Phase 1 - Fire-and-forget)
             if project.get("agent_mode") == "acquisition" and lead_data.get("email"):
+                logger.info(f"[EMAIL TRIGGER] Triggering email summary for lead {lead_id}, email: {lead_data.get('email')}")
                 trigger_email_summary(db, project_id, lead_id, session_id)
-                logger.info(f"Email summary triggered for lead {lead_id}")
+                logger.info(f"[EMAIL TRIGGER] Email summary worker triggered successfully for lead {lead_id}")
+            else:
+                logger.info(f"[EMAIL SKIP] Skipping email - agent_mode: {project.get('agent_mode')}, has_email: {bool(lead_data.get('email'))}")
             
             return response_text.replace(lead_match.group(), "").strip()
         except Exception as e:
-            logger.error(f"Lead storage error: {e}")
+            logger.error(f"[LEAD ERROR] Lead storage error: {e}")
             pass
     return response_text
 
