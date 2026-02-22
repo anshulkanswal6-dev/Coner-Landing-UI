@@ -705,8 +705,15 @@ async def widget_message_stream(data: ChatMessageRequest, request: Request):
 @api_router.post("/widget/feedback")
 async def widget_feedback(data: FeedbackRequest, request: Request):
     api_key = request.headers.get("x-project-key", "")
-    await get_project_by_api_key(api_key)
+    project = await get_project_by_api_key(api_key)
+    project_id = project["project_id"]
+    
     await db.messages.update_one({"message_id": data.message_id}, {"$set": {"feedback": data.feedback}})
+    
+    # NEW: Trigger learning extraction (Phase 1 - Self-Learning RAG)
+    trigger_learning_extraction(db, embedding_model, project_id, data.message_id, data.feedback)
+    logger.info(f"Learning extraction triggered for message {data.message_id}")
+    
     return {"message": "Feedback recorded"}
 
 # ─── Widget JS Bundle ───
