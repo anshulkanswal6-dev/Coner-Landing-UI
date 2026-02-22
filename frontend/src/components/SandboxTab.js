@@ -208,6 +208,34 @@ export default function SandboxTab({ project }) {
     } catch {}
   }, [getStorage, STORAGE_KEY]);
 
+  /* ── Switch Memory Mode ── */
+  const switchMemoryMode = useCallback((mode) => {
+    if (mode === memoryMode) return;
+    
+    /* Save current state to old storage */
+    if (sessionId && messages.length > 0) {
+      saveToStorage(sessionId, messages);
+    }
+    
+    /* Switch mode */
+    setMemoryMode(mode);
+    
+    /* Try to load from new storage */
+    const newStorage = mode === 'persistent' ? localStorage : sessionStorage;
+    try {
+      const saved = JSON.parse(newStorage.getItem(STORAGE_KEY));
+      if (saved && saved.sid && saved.msgs && saved.msgs.length > 0) {
+        setSessionId(saved.sid);
+        setMessages(saved.msgs);
+        toast.success(`Switched to ${mode} memory. Loaded saved messages.`);
+      } else {
+        toast.success(`Switched to ${mode} memory.`);
+      }
+    } catch {
+      toast.success(`Switched to ${mode} memory.`);
+    }
+  }, [memoryMode, sessionId, messages, saveToStorage, STORAGE_KEY]);
+
   const initSession = useCallback(async () => {
     /* Try to load from storage first */
     const saved = loadFromStorage();
