@@ -5,9 +5,16 @@ import logging
 import resend
 from datetime import datetime, timezone
 from emergentintegrations.llm.chat import LlmChat, UserMessage
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables
+ROOT_DIR = Path(__file__).parent.parent
+load_dotenv(ROOT_DIR / '.env')
 
 logger = logging.getLogger(__name__)
 
+# Get env vars AFTER loading .env
 RESEND_API_KEY = os.environ.get('RESEND_API_KEY', '')
 SENDER_EMAIL = os.environ.get('SENDER_EMAIL', 'onboarding@resend.dev')
 EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY')
@@ -15,6 +22,9 @@ EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY')
 # Initialize Resend
 if RESEND_API_KEY:
     resend.api_key = RESEND_API_KEY
+    logger.info(f"[EMAIL INIT] Resend configured with API key: {RESEND_API_KEY[:10]}...")
+else:
+    logger.warning("[EMAIL INIT] RESEND_API_KEY not found in environment")
 
 
 async def send_lead_summary_email(db, project_id: str, lead_id: str, session_id: str):
