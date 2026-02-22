@@ -572,6 +572,10 @@ async def widget_message(data: ChatMessageRequest, request: Request):
     api_key = request.headers.get("x-project-key", "")
     project = await get_project_by_api_key(api_key)
     project_id = project["project_id"]
+    
+    # NEW: Extract language from header (Phase 1)
+    language = request.headers.get("x-user-language", None)
+    
     conv = await db.conversations.find_one({"session_id": data.session_id}, {"_id": 0})
     if not conv:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -584,7 +588,7 @@ async def widget_message(data: ChatMessageRequest, request: Request):
         "created_at": datetime.now(timezone.utc).isoformat()
     })
 
-    ctx = await build_chat_context(project, data.session_id, data.content, data.current_url)
+    ctx = await build_chat_context(project, data.session_id, data.content, data.current_url, language)
 
     if ctx["type"] == "correction":
         assistant_msg_id = gen_id("msg_")
@@ -608,7 +612,7 @@ async def widget_message(data: ChatMessageRequest, request: Request):
         logger.error(f"LLM error: {e}")
         response_text = "I'm having trouble processing your request right now. Please try again in a moment."
 
-    response_text = await store_lead_if_present(response_text, project_id, data.session_id)
+    response_text = await store_lead_if_present(response_text, project_id, data.session_id, project)
 
     assistant_msg_id = gen_id("msg_")
     await db.messages.insert_one({
