@@ -234,7 +234,8 @@ Give a natural, conversational 3-5 paragraph answer. Use bullet points sparingly
         try:
             chat = LlmChat(
                 api_key=self.llm_key,
-                session_id=f"copilot_{hash(query) % 10000}"
+                session_id=f"copilot_{hash(query) % 10000}",
+                system_message="You are Corner AI, an intelligent analytics assistant."
             ).with_model("openai", "gpt-4o-mini")
             
             explanation = await chat.send_message(UserMessage(text=analysis_prompt))
