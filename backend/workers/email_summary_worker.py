@@ -89,7 +89,8 @@ Keep it concise (3-4 paragraphs) and actionable. Use a warm, professional tone."
         try:
             chat = LlmChat(
                 api_key=EMERGENT_LLM_KEY,
-                session_id=f"email_summary_{lead_id}"
+                session_id=f"email_summary_{lead_id}",
+                system_message="You are a helpful AI assistant summarizing customer conversations."
             ).with_model("openai", "gpt-4o-mini")
             
             summary_content = await chat.send_message(UserMessage(text=summary_prompt))
@@ -141,8 +142,8 @@ Keep it concise (3-4 paragraphs) and actionable. Use a warm, professional tone."
 </html>"""
         
         # Send email via Resend
-        if not RESEND_API_KEY:
-            logger.warning("RESEND_API_KEY not configured, skipping email send")
+        if not RESEND_API_KEY or RESEND_API_KEY == '':
+            logger.error(f"[EMAIL SEND] RESEND_API_KEY is empty or not configured. Current value: '{RESEND_API_KEY}'")
             await db.leads.update_one(
                 {"lead_id": lead_id},
                 {"$set": {"summary_email_status": "failed", "error": "RESEND_API_KEY not configured"}}
