@@ -83,7 +83,7 @@ export default function LandingPage() {
                 <div className="w-3 h-3 rounded-full bg-red-500" />
                 <div className="w-3 h-3 rounded-full bg-yellow-500" />
                 <div className="w-3 h-3 rounded-full bg-green-500" />
-                <span className="text-xs text-zinc-500 ml-2 font-mono">EmergentPulse Dashboard</span>
+                <span className="text-xs text-zinc-500 ml-2 font-mono">Coner AI Dashboard</span>
               </div>
               <div className="space-y-3">
                 <div className="bg-zinc-900 rounded-lg p-4 border border-zinc-800">
@@ -172,7 +172,7 @@ export default function LandingPage() {
             Ready to Transform Your Customer Experience?
           </h2>
           <p className="text-base text-zinc-400 mb-8">
-            Join businesses using EmergentPulse AI to automate support, capture leads, and gain insights.
+            Join businesses using Coner AI to automate support, capture leads, and gain insights.
           </p>
           <Button
             data-testid="cta-get-started-btn"
@@ -190,7 +190,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto flex items-center justify-between text-sm text-slate-500">
           <div className="flex items-center gap-2">
             <Zap className="w-4 h-4 text-[#7C3AED]" />
-            <span className="font-heading font-medium text-slate-700">EmergentPulse AI</span>
+            <span className="font-heading font-medium text-slate-700">Coner AI</span>
           </div>
           <span>Built with Emergent</span>
         </div>
