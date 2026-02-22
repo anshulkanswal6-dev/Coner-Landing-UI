@@ -1339,3 +1339,72 @@ async def startup():
 async def shutdown():
     client.close()
 
+
+# ─── Lead Export Endpoint ───
+@api_router.get("/projects/{project_id}/leads/export")
+async def export_leads(project_id: str, user: dict = Depends(get_current_user)):
+    """Export all leads as CSV"""
+    await get_project_for_user(project_id, user)
+    leads = await db.leads.find({"project_id": project_id}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    
+    # Create CSV
+    import io
+    import csv
+    
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=[
+        'lead_id', 'name', 'email', 'phone', 'query_objective', 'user_need', 
+        'source', 'preferred_contact', 'availability', 'status', 'created_at', 'admin_notes'
+    ])
+    writer.writeheader()
+    
+    for lead in leads:
+        writer.writerow({
+            'lead_id': lead.get('lead_id', ''),
+            'name': lead.get('name', ''),
+            'email': lead.get('email', ''),
+            'phone': lead.get('phone', ''),
+            'query_objective': lead.get('query_objective', lead.get('requirements', '')),
+            'user_need': lead.get('user_need', lead.get('details', '')),
+            'source': lead.get('source', 'chatbot'),
+            'preferred_contact': lead.get('preferred_contact', ''),
+            'availability': lead.get('availability', ''),
+            'status': lead.get('status', 'New'),
+            'created_at': lead.get('created_at', ''),
+            'admin_notes': lead.get('admin_notes', '')
+        })
+    
+    csv_content = output.getvalue()
+    return Response(
+        content=csv_content,
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=leads_{project_id}.csv"}
+    )
+
+# ─── Update Lead with Extended Fields ───
+@api_router.put("/projects/{project_id}/leads/{lead_id}/details")
+async def update_lead_details(
+    project_id: str, 
+    lead_id: str, 
+    data: dict,
+    user: dict = Depends(get_current_user)
+):
+    """Update lead with admin notes and extended fields"""
+    await get_project_for_user(project_id, user)
+    
+    # Extract allowed fields
+    update_fields = {}
+    allowed_fields = ['status', 'admin_notes', 'preferred_contact', 'query_objective', 'user_need', 'availability', 'social_links']
+    
+    for field in allowed_fields:
+        if field in data:
+            update_fields[field] = data[field]
+    
+    if update_fields:
+        await db.leads.update_one(
+            {"lead_id": lead_id, "project_id": project_id}, 
+            {"$set": update_fields}
+        )
+    
+    lead = await db.leads.find_one({"lead_id": lead_id}, {"_id": 0})
+    return lead
