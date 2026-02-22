@@ -445,9 +445,23 @@ var viUsr=$('ep-vi-usr'),viBot=$('ep-vi-bot'),viWave=$('ep-vi-wave'),viMute=$('e
 function setColor(c){root.style.setProperty('--ep-c',c);}
 
 /* ── Init ── */
+function detectLanguage(){
+  /* Auto-detect browser language */
+  var lang=(navigator.language||navigator.userLanguage||'en').split('-')[0];
+  /* Map to supported languages */
+  var supported=['en','es','fr','de','it','pt','zh','ja','ko','ar','hi','ru'];
+  return supported.includes(lang)?lang:'en';
+}
+
 function init(){
+  /* Detect and store language */
+  if(!USER_LANG)USER_LANG=detectLanguage();
+  
   var saved=loadLocal();
-  fetch(API+'/widget/init',{method:'POST',headers:{'Content-Type':'application/json','x-project-key':PK}})
+  fetch(API+'/widget/init',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-project-key':PK,'x-user-language':USER_LANG}
+  })
   .then(function(r){return r.json();})
   .then(function(d){
     SID=d.session_id;CFG=d;
@@ -603,7 +617,7 @@ function sendText(txt){
   } else showDots();
 
   fetch(API+'/widget/message/stream',{
-    method:'POST',headers:{'Content-Type':'application/json','x-project-key':PK},
+    method:'POST',headers:{'Content-Type':'application/json','x-project-key':PK,'x-user-language':USER_LANG||'en'},
     body:JSON.stringify({session_id:SID,content:txt,current_url:window.location.href})
   }).then(function(resp){
     hideDots();
