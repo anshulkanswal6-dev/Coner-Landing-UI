@@ -29,6 +29,8 @@ async def send_lead_summary_email(db, project_id: str, lead_id: str, session_id:
         session_id: Session ID
     """
     try:
+        logger.info(f"[EMAIL SEND] Starting email generation for lead {lead_id}")
+        
         # Update status to pending
         await db.leads.update_one(
             {"lead_id": lead_id},
@@ -38,10 +40,10 @@ async def send_lead_summary_email(db, project_id: str, lead_id: str, session_id:
         # Fetch lead info
         lead = await db.leads.find_one({"lead_id": lead_id}, {"_id": 0})
         if not lead or not lead.get("email"):
-            logger.error(f"Lead {lead_id} has no email")
+            logger.error(f"[EMAIL SEND] Lead {lead_id} has no email")
             await db.leads.update_one(
                 {"lead_id": lead_id},
-                {"$set": {"summary_email_status": "failed"}}
+                {"$set": {"summary_email_status": "failed", "error": "No email address"}}
             )
             return
         
@@ -194,8 +196,10 @@ def trigger_email_summary(db, project_id: str, lead_id: str, session_id: str):
     Creates async task without blocking.
     """
     try:
+        logger.info(f"[EMAIL WORKER] Creating async task for lead {lead_id}")
         asyncio.create_task(
             send_lead_summary_email(db, project_id, lead_id, session_id)
         )
+        logger.info(f"[EMAIL WORKER] Async task created successfully for lead {lead_id}")
     except Exception as e:
-        logger.error(f"Failed to trigger email summary: {e}")
+        logger.error(f"[EMAIL WORKER] Failed to trigger email summary: {e}")
