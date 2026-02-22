@@ -207,8 +207,8 @@ def validate_widget_origin(request: Request, project: dict):
     if not any(host == d or host.endswith(f".{d}") for d in domains):
         raise HTTPException(status_code=403, detail="Domain not whitelisted")
 
-async def build_chat_context(project: dict, session_id: str, user_content: str, current_url: str = ""):
-    """Shared RAG pipeline: embed query, search chunks/corrections, build prompt."""
+async def build_chat_context(project: dict, session_id: str, user_content: str, current_url: str = "", language: str = None):
+    """Shared RAG pipeline: embed query, search chunks/corrections/learned patterns, build prompt."""
     project_id = project["project_id"]
     query_embedding = await get_embedding(user_content)
 
@@ -220,6 +220,12 @@ async def build_chat_context(project: dict, session_id: str, user_content: str, 
     # Search knowledge
     relevant_chunks = await search_similar_chunks(project_id, query_embedding, top_k=5)
     context = "\n\n".join([f"[Source: {c['source']}]\n{c['content']}" for c in relevant_chunks if c['score'] > 0.3])
+
+    # NEW: Search learned patterns (Phase 1 - Self-Learning RAG)
+    learned_patterns = await search_learned_patterns(db, project_id, query_embedding, top_k=3)
+    if learned_patterns:
+        patterns_context = "\n\n".join([f"[Learned Pattern - {p['pattern_type']}]\n{p['content']}" for p in learned_patterns])
+        context = f"{context}\n\nLEARNED PATTERNS:\n{patterns_context}" if context else f"LEARNED PATTERNS:\n{patterns_context}"
 
     # Get conversation history
     history = await db.messages.find(
@@ -252,6 +258,17 @@ async def build_chat_context(project: dict, session_id: str, user_content: str, 
     else:
         mode_instruction = "You are in SUPPORT mode. Help the user with their questions using the knowledge base."
 
+    # NEW: Add language instruction (Phase 1 - Multilingual)
+    language_instruction = ""
+    if language and language != "en":
+        language_map = {
+            "es": "Spanish", "fr": "French", "de": "German", "it": "Italian",
+            "pt": "Portuguese", "zh": "Chinese", "ja": "Japanese", "ko": "Korean",
+            "ar": "Arabic", "hi": "Hindi", "ru": "Russian"
+        }
+        language_name = language_map.get(language, language)
+        language_instruction = f"\nIMPORTANT: Respond strictly in {language_name} language. All your responses must be in {language_name}."
+
     system_prompt = f"""You are an AI assistant for "{project['name']}". {project.get('description', '')}
 
 {mode_instruction}
@@ -263,6 +280,7 @@ KNOWLEDGE BASE CONTEXT:
 {context if context else "No relevant knowledge found. Answer based on general knowledge but stay within the business scope."}
 
 Current URL: {current_url or 'Not provided'}
+{language_instruction}
 
 Respond in markdown format when helpful. Be helpful, accurate, and follow all rules strictly."""
 
@@ -270,7 +288,7 @@ Respond in markdown format when helpful. Be helpful, accurate, and follow all ru
     for h in history[-10:]:
         chat_messages.append({"role": h["role"], "content": h["content"] if isinstance(h["content"], str) else str(h["content"])})
 
-    return {"type": "rag", "chat_messages": chat_messages, "system_prompt": system_prompt, "chunks_used": len(relevant_chunks)}
+    return {"type": "rag", "chat_messages": chat_messages, "system_prompt": system_prompt, "chunks_used": len(relevant_chunks), "patterns_used": len(learned_patterns)}
 
 async def store_lead_if_present(response_text: str, project_id: str, session_id: str):
     """Extract lead JSON from response and store it."""
