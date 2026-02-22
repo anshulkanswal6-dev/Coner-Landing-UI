@@ -547,10 +547,17 @@ async def widget_init(request: Request):
     api_key = request.headers.get("x-project-key", "")
     project = await get_project_by_api_key(api_key)
     validate_widget_origin(request, project)
+    
+    # NEW: Extract language from header (Phase 1 - Multilingual)
+    language = request.headers.get("x-user-language", "en")
+    
     session_id = gen_id("ses_")
     await db.conversations.insert_one({
-        "session_id": session_id, "project_id": project["project_id"],
-        "started_at": datetime.now(timezone.utc).isoformat(), "message_count": 0
+        "session_id": session_id, 
+        "project_id": project["project_id"],
+        "language_locale": language,  # NEW: Phase 1 - Store user language
+        "started_at": datetime.now(timezone.utc).isoformat(), 
+        "message_count": 0
     })
     return {
         "session_id": session_id,
