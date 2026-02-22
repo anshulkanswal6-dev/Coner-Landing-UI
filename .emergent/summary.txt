@@ -1,190 +1,342 @@
 <analysis>**original_problem_statement:**
-The user's core objective is to build a production-ready, multi-tenant AI SaaS platform, EmergentPulse AI. The platform enables users to create AI agents, manage knowledge, and capture leads via an embeddable widget.
+The user's primary goal is to build and enhance a production-ready, multi-tenant AI SaaS platform, now named Coner AI. The platform allows end-users to create AI agents, manage knowledge via a RAG pipeline, and capture leads through an embeddable chat widget.
 
-Recent tasks have focused on enhancing the user experience and core functionality, including:
-- A Premium Voice Experience upgrade for the chat widget.
-- Implementing a robust RAG pipeline with multi-format document uploads and website sync capabilities.
-- Transforming the leads management section into a full-fledged CRM-style dashboard.
-- Adding configurable chat memory (session vs. persistent).
-- Fixing critical bugs related to voice interruption and UI component initialization.
+Recent work has focused on a significant feature upgrade based on a Delta-SRS document, which included:
+- **Backend Foundations:** Implementing async workers for email summaries (using Resend) and learning from user feedback.
+- **New Analytics:** Adding Insight Cards and a Talk to Corner AI copilot to the dashboard.
+- **Widget Enhancements:** Adding multi-language support.
+- **Admin Tooling:** A temporary, read-only admin endpoint () was added to provide platform traction metrics for demos.
+- **Rebranding:** The user requested to rebrand the entire application to Coner AI and add a new logo.
 
 **User's preferred language**: English
 
 **what currently exists?**
-A full-stack application with a FastAPI backend and a React frontend. The application features a multi-tenant project structure, an embeddable chat widget with an advanced voice mode, and a user dashboard. The dashboard now includes a sophisticated Knowledge tab for RAG source management (document uploads, website sync) and a Leads tab redesigned into a CRM-style table with filtering, a detailed modal view, and CSV export functionality. Chat memory can be configured to be session-based or persistent.
+A full-stack application with a FastAPI backend and a React frontend, rebranded as Coner AI. The backend was recently refactored to a more modular structure, with async workers (, ) and services (, ) separated from the main  file. The frontend features a multi-tenant project dashboard, an analytics page with Insight Cards and an AI copilot tab, and an embeddable chat widget. A secure, read-only admin stats endpoint is available.
 
 **Last working item**:
-- Last item agent was working: The user requested UI improvements for the new CRM-style Leads dashboard. The agent implemented two changes in :
-    1.  Added a status dropdown directly within each lead's row in the table for quick updates.
-    2.  Improved the UI layout and styling of the View Ticket modal for better readability.
-- Status: USER VERIFICATION PENDING
+- Last item agent was working: Rebranding the application to Coner AI. The agent found all frontend files containing the old brand name (EmergentPulse AI) and ran a series of  commands to update the text and add the new logo.
+- Status: IN PROGRESS
 - Agent Testing Done: N
-- Which testing method agent to use? screenshot tool (To visually confirm the new dropdown and improved modal UI in the Leads tab).
+- Which testing method agent to use? The agent must first rebuild the frontend (yarn run v1.22.22
+$ craco build
+Creating an optimized production build...
+Compiled with warnings.
+
+[eslint] 
+src/components/AnalyticsTab.js
+  Line 21:6:  React Hook useEffect has missing dependencies: 'fetchAnalytics' and 'fetchInsights'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+src/components/FeedbackTab.js
+  Line 18:41:  React Hook useEffect has a missing dependency: 'fetchFeedback'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/components/GoldenRulesTab.js
+  Line 31:6:  React Hook useEffect has missing dependencies: 'fetchProject' and 'fetchRules'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+src/components/KnowledgeTab.js
+  Line 29:6:  React Hook useEffect has missing dependencies: 'fetchFiles', 'fetchSources', and 'fetchSyncStatus'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+src/components/LeadsTab.js
+  Line 36:38:  React Hook useEffect has a missing dependency: 'fetchLeads'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/components/SandboxTab.js
+  Line 331:6:  React Hook useEffect has missing dependencies: 'initSession' and 'project.project_id'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  Line 377:6:  React Hook useEffect has a missing dependency: 'startListeningInner'. Either include it or remove the dependency array                     react-hooks/exhaustive-deps
+  Line 394:6:  React Hook useCallback has a missing dependency: 'animateMicBars'. Either include it or remove the dependency array                        react-hooks/exhaustive-deps
+  Line 534:6:  React Hook useCallback has a missing dependency: 'speakTTSChunked'. Either include it or remove the dependency array                       react-hooks/exhaustive-deps
+  Line 558:6:  React Hook useCallback has a missing dependency: 'speakNextSentence'. Either include it or remove the dependency array                     react-hooks/exhaustive-deps
+  Line 705:6:  React Hook useCallback has a missing dependency: 'startListeningInner'. Either include it or remove the dependency array                   react-hooks/exhaustive-deps
+
+src/pages/ProjectDetail.js
+  Line 26:40:  React Hook useEffect has a missing dependency: 'fetchProject'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+File sizes after gzip:
+
+  273.22 kB (-3 B)  build/static/js/main.b6ddb759.js
+  12.03 kB          build/static/css/main.c7f90459.css
+
+The project was built assuming it is hosted at /.
+You can control this with the homepage field in your package.json.
+
+The build folder is ready to be deployed.
+You may serve it with a static server:
+
+  yarn global add serve
+  serve -s build
+
+Find out more about deployment here:
+
+  https://cra.link/deployment
+
+Done in 25.13s.) and restart services (frontend: stopped
+backend: stopped
+frontend: started
+backend: started). Then, use the screenshot tool to visually confirm the new Coner AI name and logo appear correctly on the login page, dashboard navbar, and other key UI elements.
 - User Testing Done: N
 
 **All Pending/In progress Issue list**:
-- Issue 1: (P0) Verify the UI changes on the Leads page. The new in-line status dropdown and the refined View Ticket modal need to be visually checked to confirm they work as intended.
-- Issue 2: (P1) The  component was repeatedly crashing due to s related to React hook initialization order. The agent performed a significant refactoring of the component to fix this. The component's core functionalities (voice mode, memory switching, chat) need to be thoroughly tested to ensure no regressions were introduced.
-- Issue 3: (P2) The new knowledge ingestion features (multi-format document upload, website sync) have been implemented on both the frontend and backend but have not been tested end-to-end.
-- Issue 4: (P3) Critical security vulnerability in . The  endpoint does not validate the request origin against the project's , allowing the widget to be embedded on unauthorized websites.
+  - Issue 1: (P0) Chat widget is not visible on embedded sites.
+  - Issue 2: (P0) Lead summary emails are not being sent upon lead capture.
+  - Issue 3: (P1) Complete and verify the Coner AI rebranding.
+  - Issue 4: (P2) User verification for the Talk to Corner (Copilot) feature enhancement.
+  - Issue 5: (P3) Critical security vulnerability in  endpoint.
 
-Issues Detail:
-  - Issue 1: Verify UI changes on the Leads page
-     - Attempted fixes: The agent has already implemented the code changes in .
-     - Next debug checklist: Use the screenshot tool to view the  page and navigate to the Leads tab. Confirm the status dropdown is present and the View modal is well-formatted.
-     - Why fix this issue and what will be achieved with the fix? To confirm the user's latest request is completed successfully.
-     - Status:  USER VERIFICATION PENDING
-     - Is recurring issue? N
-     - Should Test frontend/backend/both after fix? Frontend
-     - Blocked on other issue: No
-
-  - Issue 2: Potential regressions in 
-     - Attempted fixes: The agent refactored the component by reordering state, helper functions, and  hooks to resolve initialization errors.
-     - Next debug checklist: Use the frontend testing agent to specifically test the Test Bot (Sandbox) tab. The test should cover sending messages, switching between memory modes, and activating/using the voice mode.
-     - Why fix this issue and what will be achieved with the fix? To ensure the critical Test Bot feature is stable after major refactoring.
-     - Status:  TESTING PENDING
-     - Is recurring issue? Y (The crash was a recurring problem during the session).
-     - Should Test frontend/backend/both after fix? Frontend
-     - Blocked on other issue: No
-
-  - Issue 3: End-to-end testing for Knowledge Ingestion
-     - Attempted fixes: Implementation is complete.
-     - Next debug checklist: Use the frontend testing agent to navigate to the Knowledge tab, upload a document (e.g., .txt or .pdf), wait for it to be processed, and then ask the bot a question related to the document's content to verify the RAG pipeline is working.
-     - Why fix this issue and what will be achieved with the fix? To validate that one of the core new features is fully functional.
-     - Status:  TESTING PENDING
-     - Is recurring issue? N
-     - Should Test frontend/backend/both after fix? Both
-     - Blocked on other issue: No
-
-  - Issue 4: Security Vulnerability with Whitelisted Domains
-     - Attempted fixes: None. This was identified in a previous audit and has not been addressed.
+  Issues Detail:
+  - Issue 1: Chat widget is not visible on embedded sites.
+     - Attempted fixes: The agent investigated by linting  and checking the serving endpoint, but the investigation was inconclusive. The changes made to  for language support are the most likely cause.
      - Next debug checklist:
-       - **File:** 
-       - **Function:** 
-       - **Fix:** Add logic to check the request's  or  header against the project's  from the database. If there's no match, return a  error.
-     - Why fix this issue and what will be achieved with the fix? This is a critical security fix to ensure tenant data isolation and control over widget embedding.
-     - Status:  NOT STARTED
+        1. On a page where the widget should be embedded, open the browser's developer console.
+        2. Check the Console tab for any JavaScript errors (e.g., syntax errors, initialization failures).
+        3. Check the Network tab to confirm  is loading successfully (HTTP 200).
+        4. Review the recent changes in , especially around language detection and UI creation.
+     - Why fix this issue and what will be achieved with the fix? This is a critical, show-stopping bug. The core feature of the product (the embeddable widget) is broken.
+     - Status: IN PROGRESS
      - Is recurring issue? N
-     - Should Test frontend/backend/both after fix? Backend
-     - Blocked on other issue: No
+     - Should Test frontend/backend/both after fix? Both (Backend to serve the file, Frontend to render it).
+
+  - Issue 2: Lead summary emails are not being sent upon lead capture.
+     - Attempted fixes: The agent identified a failed status in the database and an error in the logs related to the  not being loaded correctly by the worker process. The agent attempted a fix by lazy-loading the environment variable within the worker function in . This fix was not successful, as the user reported still not receiving emails.
+     - Next debug checklist:
+        1. Check backend logs for errors from  after a lead is captured: ==> /var/log/supervisor/backend.err.log <==
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights:   1%|          | 1/103 [00:00<00:00, 11814.94it/s, Materializing param=embeddings.LayerNorm.bias]Loading weights:   1%|          | 1/103 [00:00<00:00, 4922.89it/s, Materializing param=embeddings.LayerNorm.bias] Loading weights:   2%|▏         | 2/103 [00:00<00:00, 5256.02it/s, Materializing param=embeddings.LayerNorm.weight]Loading weights:   2%|▏         | 2/103 [00:00<00:00, 4660.34it/s, Materializing param=embeddings.LayerNorm.weight]Loading weights:   3%|▎         | 3/103 [00:00<00:00, 986.04it/s, Materializing param=embeddings.position_embeddings.weight]Loading weights:   3%|▎         | 3/103 [00:00<00:00, 886.37it/s, Materializing param=embeddings.position_embeddings.weight]Loading weights:   4%|▍         | 4/103 [00:00<00:00, 1131.15it/s, Materializing param=embeddings.token_type_embeddings.weight]Loading weights:   4%|▍         | 4/103 [00:00<00:00, 1112.33it/s, Materializing param=embeddings.token_type_embeddings.weight]Loading weights:   5%|▍         | 5/103 [00:00<00:00, 1358.96it/s, Materializing param=embeddings.word_embeddings.weight]      Loading weights:   5%|▍         | 5/103 [00:00<00:00, 1345.71it/s, Materializing param=embeddings.word_embeddings.weight]Loading weights:   6%|▌         | 6/103 [00:00<00:00, 1586.85it/s, Materializing param=encoder.layer.0.attention.output.LayerNorm.bias]Loading weights:   6%|▌         | 6/103 [00:00<00:00, 1568.75it/s, Materializing param=encoder.layer.0.attention.output.LayerNorm.bias]Loading weights:   7%|▋         | 7/103 [00:00<00:00, 1780.26it/s, Materializing param=encoder.layer.0.attention.output.LayerNorm.weight]Loading weights:   7%|▋         | 7/103 [00:00<00:00, 1765.07it/s, Materializing param=encoder.layer.0.attention.output.LayerNorm.weight]Loading weights:   8%|▊         | 8/103 [00:00<00:00, 1980.20it/s, Materializing param=encoder.layer.0.attention.output.dense.bias]      Loading weights:   8%|▊         | 8/103 [00:00<00:00, 1965.01it/s, Materializing param=encoder.layer.0.attention.output.dense.bias]Loading weights:   9%|▊         | 9/103 [00:00<00:00, 2171.71it/s, Materializing param=encoder.layer.0.attention.output.dense.weight]Loading weights:   9%|▊         | 9/103 [00:00<00:00, 2155.59it/s, Materializing param=encoder.layer.0.attention.output.dense.weight]Loading weights:  10%|▉         | 10/103 [00:00<00:00, 2358.60it/s, Materializing param=encoder.layer.0.attention.self.key.bias]     Loading weights:  10%|▉         | 10/103 [00:00<00:00, 2338.35it/s, Materializing param=encoder.layer.0.attention.self.key.bias]Loading weights:  11%|█         | 11/103 [00:00<00:00, 2536.41it/s, Materializing param=encoder.layer.0.attention.self.key.weight]Loading weights:  11%|█         | 11/103 [00:00<00:00, 2518.69it/s, Materializing param=encoder.layer.0.attention.self.key.weight]Loading weights:  12%|█▏        | 12/103 [00:00<00:00, 2704.40it/s, Materializing param=encoder.layer.0.attention.self.query.bias]Loading weights:  12%|█▏        | 12/103 [00:00<00:00, 2685.21it/s, Materializing param=encoder.layer.0.attention.self.query.bias]Loading weights:  13%|█▎        | 13/103 [00:00<00:00, 2869.03it/s, Materializing param=encoder.layer.0.attention.self.query.weight]Loading weights:  13%|█▎        | 13/103 [00:00<00:00, 2850.43it/s, Materializing param=encoder.layer.0.attention.self.query.weight]Loading weights:  14%|█▎        | 14/103 [00:00<00:00, 3030.25it/s, Materializing param=encoder.layer.0.attention.self.value.bias]  Loading weights:  14%|█▎        | 14/103 [00:00<00:00, 3010.99it/s, Materializing param=encoder.layer.0.attention.self.value.bias]Loading weights:  15%|█▍        | 15/103 [00:00<00:00, 391.11it/s, Materializing param=encoder.layer.0.attention.self.value.weight]Loading weights:  15%|█▍        | 15/103 [00:00<00:00, 388.06it/s, Materializing param=encoder.layer.0.attention.self.value.weight]Loading weights:  16%|█▌        | 16/103 [00:00<00:00, 382.68it/s, Materializing param=encoder.layer.0.intermediate.dense.bias]    Loading weights:  16%|█▌        | 16/103 [00:00<00:00, 379.83it/s, Materializing param=encoder.layer.0.intermediate.dense.bias]Loading weights:  17%|█▋        | 17/103 [00:00<00:00, 402.13it/s, Materializing param=encoder.layer.0.intermediate.dense.weight]Loading weights:  17%|█▋        | 17/103 [00:00<00:00, 400.10it/s, Materializing param=encoder.layer.0.intermediate.dense.weight]Loading weights:  17%|█▋        | 18/103 [00:00<00:00, 346.81it/s, Materializing param=encoder.layer.0.output.LayerNorm.bias]    Loading weights:  17%|█▋        | 18/103 [00:00<00:00, 345.81it/s, Materializing param=encoder.layer.0.output.LayerNorm.bias]Loading weights:  18%|█▊        | 19/103 [00:00<00:00, 244.12it/s, Materializing param=encoder.layer.0.output.LayerNorm.weight]Loading weights:  18%|█▊        | 19/103 [00:00<00:00, 239.32it/s, Materializing param=encoder.layer.0.output.LayerNorm.weight]Loading weights:  19%|█▉        | 20/103 [00:00<00:00, 227.49it/s, Materializing param=encoder.layer.0.output.dense.bias]      Loading weights:  19%|█▉        | 20/103 [00:00<00:00, 227.20it/s, Materializing param=encoder.layer.0.output.dense.bias]Loading weights:  20%|██        | 21/103 [00:00<00:00, 237.50it/s, Materializing param=encoder.layer.0.output.dense.weight]Loading weights:  20%|██        | 21/103 [00:00<00:00, 237.29it/s, Materializing param=encoder.layer.0.output.dense.weight]Loading weights:  21%|██▏       | 22/103 [00:00<00:00, 248.34it/s, Materializing param=encoder.layer.1.attention.output.LayerNorm.bias]Loading weights:  21%|██▏       | 22/103 [00:00<00:00, 248.25it/s, Materializing param=encoder.layer.1.attention.output.LayerNorm.bias]Loading weights:  22%|██▏       | 23/103 [00:00<00:00, 259.28it/s, Materializing param=encoder.layer.1.attention.output.LayerNorm.weight]Loading weights:  22%|██▏       | 23/103 [00:00<00:00, 259.19it/s, Materializing param=encoder.layer.1.attention.output.LayerNorm.weight]Loading weights:  23%|██▎       | 24/103 [00:00<00:00, 269.80it/s, Materializing param=encoder.layer.1.attention.output.dense.bias]      Loading weights:  23%|██▎       | 24/103 [00:00<00:00, 269.69it/s, Materializing param=encoder.layer.1.attention.output.dense.bias]Loading weights:  24%|██▍       | 25/103 [00:00<00:00, 280.70it/s, Materializing param=encoder.layer.1.attention.output.dense.weight]Loading weights:  24%|██▍       | 25/103 [00:00<00:00, 280.56it/s, Materializing param=encoder.layer.1.attention.output.dense.weight]Loading weights:  25%|██▌       | 26/103 [00:00<00:00, 291.58it/s, Materializing param=encoder.layer.1.attention.self.key.bias]      Loading weights:  25%|██▌       | 26/103 [00:00<00:00, 291.49it/s, Materializing param=encoder.layer.1.attention.self.key.bias]Loading weights:  26%|██▌       | 27/103 [00:00<00:00, 302.50it/s, Materializing param=encoder.layer.1.attention.self.key.weight]Loading weights:  26%|██▌       | 27/103 [00:00<00:00, 302.38it/s, Materializing param=encoder.layer.1.attention.self.key.weight]Loading weights:  27%|██▋       | 28/103 [00:00<00:00, 313.36it/s, Materializing param=encoder.layer.1.attention.self.query.bias]Loading weights:  27%|██▋       | 28/103 [00:00<00:00, 313.27it/s, Materializing param=encoder.layer.1.attention.self.query.bias]Loading weights:  28%|██▊       | 29/103 [00:00<00:00, 324.25it/s, Materializing param=encoder.layer.1.attention.self.query.weight]Loading weights:  28%|██▊       | 29/103 [00:00<00:00, 324.16it/s, Materializing param=encoder.layer.1.attention.self.query.weight]Loading weights:  29%|██▉       | 30/103 [00:00<00:00, 335.12it/s, Materializing param=encoder.layer.1.attention.self.value.bias]  Loading weights:  29%|██▉       | 30/103 [00:00<00:00, 335.02it/s, Materializing param=encoder.layer.1.attention.self.value.bias]Loading weights:  30%|███       | 31/103 [00:00<00:00, 345.96it/s, Materializing param=encoder.layer.1.attention.self.value.weight]Loading weights:  30%|███       | 31/103 [00:00<00:00, 345.86it/s, Materializing param=encoder.layer.1.attention.self.value.weight]Loading weights:  31%|███       | 32/103 [00:00<00:00, 356.78it/s, Materializing param=encoder.layer.1.intermediate.dense.bias]    Loading weights:  31%|███       | 32/103 [00:00<00:00, 356.68it/s, Materializing param=encoder.layer.1.intermediate.dense.bias]Loading weights:  32%|███▏      | 33/103 [00:00<00:00, 367.57it/s, Materializing param=encoder.layer.1.intermediate.dense.weight]Loading weights:  32%|███▏      | 33/103 [00:00<00:00, 356.03it/s, Materializing param=encoder.layer.1.intermediate.dense.weight]Loading weights:  33%|███▎      | 34/103 [00:00<00:00, 366.20it/s, Materializing param=encoder.layer.1.output.LayerNorm.bias]    Loading weights:  33%|███▎      | 34/103 [00:00<00:00, 366.03it/s, Materializing param=encoder.layer.1.output.LayerNorm.bias]Loading weights:  34%|███▍      | 35/103 [00:00<00:00, 376.48it/s, Materializing param=encoder.layer.1.output.LayerNorm.weight]Loading weights:  34%|███▍      | 35/103 [00:00<00:00, 376.35it/s, Materializing param=encoder.layer.1.output.LayerNorm.weight]Loading weights:  35%|███▍      | 36/103 [00:00<00:00, 386.85it/s, Materializing param=encoder.layer.1.output.dense.bias]      Loading weights:  35%|███▍      | 36/103 [00:00<00:00, 386.74it/s, Materializing param=encoder.layer.1.output.dense.bias]Loading weights:  36%|███▌      | 37/103 [00:00<00:00, 397.24it/s, Materializing param=encoder.layer.1.output.dense.weight]Loading weights:  36%|███▌      | 37/103 [00:00<00:00, 397.13it/s, Materializing param=encoder.layer.1.output.dense.weight]Loading weights:  37%|███▋      | 38/103 [00:00<00:00, 407.62it/s, Materializing param=encoder.layer.2.attention.output.LayerNorm.bias]Loading weights:  37%|███▋      | 38/103 [00:00<00:00, 407.50it/s, Materializing param=encoder.layer.2.attention.output.LayerNorm.bias]Loading weights:  38%|███▊      | 39/103 [00:00<00:00, 417.92it/s, Materializing param=encoder.layer.2.attention.output.LayerNorm.weight]Loading weights:  38%|███▊      | 39/103 [00:00<00:00, 417.79it/s, Materializing param=encoder.layer.2.attention.output.LayerNorm.weight]Loading weights:  39%|███▉      | 40/103 [00:00<00:00, 428.24it/s, Materializing param=encoder.layer.2.attention.output.dense.bias]      Loading weights:  39%|███▉      | 40/103 [00:00<00:00, 428.12it/s, Materializing param=encoder.layer.2.attention.output.dense.bias]Loading weights:  40%|███▉      | 41/103 [00:00<00:00, 438.55it/s, Materializing param=encoder.layer.2.attention.output.dense.weight]Loading weights:  40%|███▉      | 41/103 [00:00<00:00, 438.43it/s, Materializing param=encoder.layer.2.attention.output.dense.weight]Loading weights:  41%|████      | 42/103 [00:00<00:00, 448.86it/s, Materializing param=encoder.layer.2.attention.self.key.bias]      Loading weights:  41%|████      | 42/103 [00:00<00:00, 448.74it/s, Materializing param=encoder.layer.2.attention.self.key.bias]Loading weights:  42%|████▏     | 43/103 [00:00<00:00, 459.15it/s, Materializing param=encoder.layer.2.attention.self.key.weight]Loading weights:  42%|████▏     | 43/103 [00:00<00:00, 459.01it/s, Materializing param=encoder.layer.2.attention.self.key.weight]Loading weights:  43%|████▎     | 44/103 [00:00<00:00, 469.41it/s, Materializing param=encoder.layer.2.attention.self.query.bias]Loading weights:  43%|████▎     | 44/103 [00:00<00:00, 469.28it/s, Materializing param=encoder.layer.2.attention.self.query.bias]Loading weights:  44%|████▎     | 45/103 [00:00<00:00, 479.67it/s, Materializing param=encoder.layer.2.attention.self.query.weight]Loading weights:  44%|████▎     | 45/103 [00:00<00:00, 479.54it/s, Materializing param=encoder.layer.2.attention.self.query.weight]Loading weights:  45%|████▍     | 46/103 [00:00<00:00, 489.84it/s, Materializing param=encoder.layer.2.attention.self.value.bias]  Loading weights:  45%|████▍     | 46/103 [00:00<00:00, 489.71it/s, Materializing param=encoder.layer.2.attention.self.value.bias]Loading weights:  46%|████▌     | 47/103 [00:00<00:00, 500.06it/s, Materializing param=encoder.layer.2.attention.self.value.weight]Loading weights:  46%|████▌     | 47/103 [00:00<00:00, 499.92it/s, Materializing param=encoder.layer.2.attention.self.value.weight]Loading weights:  47%|████▋     | 48/103 [00:00<00:00, 510.27it/s, Materializing param=encoder.layer.2.intermediate.dense.bias]    Loading weights:  47%|████▋     | 48/103 [00:00<00:00, 510.13it/s, Materializing param=encoder.layer.2.intermediate.dense.bias]Loading weights:  48%|████▊     | 49/103 [00:00<00:00, 520.44it/s, Materializing param=encoder.layer.2.intermediate.dense.weight]Loading weights:  48%|████▊     | 49/103 [00:00<00:00, 520.30it/s, Materializing param=encoder.layer.2.intermediate.dense.weight]Loading weights:  49%|████▊     | 50/103 [00:00<00:00, 530.62it/s, Materializing param=encoder.layer.2.output.LayerNorm.bias]    Loading weights:  49%|████▊     | 50/103 [00:00<00:00, 530.47it/s, Materializing param=encoder.layer.2.output.LayerNorm.bias]Loading weights:  50%|████▉     | 51/103 [00:00<00:00, 540.74it/s, Materializing param=encoder.layer.2.output.LayerNorm.weight]Loading weights:  50%|████▉     | 51/103 [00:00<00:00, 540.59it/s, Materializing param=encoder.layer.2.output.LayerNorm.weight]Loading weights:  50%|█████     | 52/103 [00:00<00:00, 550.89it/s, Materializing param=encoder.layer.2.output.dense.bias]      Loading weights:  50%|█████     | 52/103 [00:00<00:00, 550.73it/s, Materializing param=encoder.layer.2.output.dense.bias]Loading weights:  51%|█████▏    | 53/103 [00:00<00:00, 561.01it/s, Materializing param=encoder.layer.2.output.dense.weight]Loading weights:  51%|█████▏    | 53/103 [00:00<00:00, 560.85it/s, Materializing param=encoder.layer.2.output.dense.weight]Loading weights:  52%|█████▏    | 54/103 [00:00<00:00, 571.12it/s, Materializing param=encoder.layer.3.attention.output.LayerNorm.bias]Loading weights:  52%|█████▏    | 54/103 [00:00<00:00, 570.95it/s, Materializing param=encoder.layer.3.attention.output.LayerNorm.bias]Loading weights:  53%|█████▎    | 55/103 [00:00<00:00, 581.17it/s, Materializing param=encoder.layer.3.attention.output.LayerNorm.weight]Loading weights:  53%|█████▎    | 55/103 [00:00<00:00, 581.00it/s, Materializing param=encoder.layer.3.attention.output.LayerNorm.weight]Loading weights:  54%|█████▍    | 56/103 [00:00<00:00, 591.21it/s, Materializing param=encoder.layer.3.attention.output.dense.bias]      Loading weights:  54%|█████▍    | 56/103 [00:00<00:00, 591.05it/s, Materializing param=encoder.layer.3.attention.output.dense.bias]Loading weights:  55%|█████▌    | 57/103 [00:00<00:00, 601.25it/s, Materializing param=encoder.layer.3.attention.output.dense.weight]Loading weights:  55%|█████▌    | 57/103 [00:00<00:00, 601.09it/s, Materializing param=encoder.layer.3.attention.output.dense.weight]Loading weights:  56%|█████▋    | 58/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.3.attention.output.dense.weight]Loading weights:  56%|█████▋    | 58/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.3.attention.self.key.bias]      Loading weights:  56%|█████▋    | 58/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.3.attention.self.key.bias]Loading weights:  57%|█████▋    | 59/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.3.attention.self.key.weight]Loading weights:  57%|█████▋    | 59/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.3.attention.self.key.weight]Loading weights:  58%|█████▊    | 60/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.3.attention.self.query.bias]Loading weights:  58%|█████▊    | 60/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.3.attention.self.query.bias]Loading weights:  59%|█████▉    | 61/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.3.attention.self.query.weight]Loading weights:  59%|█████▉    | 61/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.3.attention.self.query.weight]Loading weights:  60%|██████    | 62/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.3.attention.self.value.bias]  Loading weights:  60%|██████    | 62/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.3.attention.self.value.bias]Loading weights:  61%|██████    | 63/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.3.attention.self.value.weight]Loading weights:  61%|██████    | 63/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.3.attention.self.value.weight]Loading weights:  62%|██████▏   | 64/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.3.intermediate.dense.bias]    Loading weights:  62%|██████▏   | 64/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.3.intermediate.dense.bias]Loading weights:  63%|██████▎   | 65/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.3.intermediate.dense.weight]Loading weights:  63%|██████▎   | 65/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.3.intermediate.dense.weight]Loading weights:  64%|██████▍   | 66/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.3.output.LayerNorm.bias]    Loading weights:  64%|██████▍   | 66/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.3.output.LayerNorm.bias]Loading weights:  65%|██████▌   | 67/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.3.output.LayerNorm.weight]Loading weights:  65%|██████▌   | 67/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.3.output.LayerNorm.weight]Loading weights:  66%|██████▌   | 68/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.3.output.dense.bias]      Loading weights:  66%|██████▌   | 68/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.3.output.dense.bias]Loading weights:  67%|██████▋   | 69/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.3.output.dense.weight]Loading weights:  67%|██████▋   | 69/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.3.output.dense.weight]Loading weights:  68%|██████▊   | 70/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.4.attention.output.LayerNorm.bias]Loading weights:  68%|██████▊   | 70/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.4.attention.output.LayerNorm.bias]Loading weights:  69%|██████▉   | 71/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.4.attention.output.LayerNorm.weight]Loading weights:  69%|██████▉   | 71/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.4.attention.output.LayerNorm.weight]Loading weights:  70%|██████▉   | 72/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.4.attention.output.dense.bias]      Loading weights:  70%|██████▉   | 72/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.4.attention.output.dense.bias]Loading weights:  71%|███████   | 73/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.4.attention.output.dense.weight]Loading weights:  71%|███████   | 73/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.4.attention.output.dense.weight]Loading weights:  72%|███████▏  | 74/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.4.attention.self.key.bias]      Loading weights:  72%|███████▏  | 74/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.4.attention.self.key.bias]Loading weights:  73%|███████▎  | 75/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.4.attention.self.key.weight]Loading weights:  73%|███████▎  | 75/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.4.attention.self.key.weight]Loading weights:  74%|███████▍  | 76/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.4.attention.self.query.bias]Loading weights:  74%|███████▍  | 76/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.4.attention.self.query.bias]Loading weights:  75%|███████▍  | 77/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.4.attention.self.query.weight]Loading weights:  75%|███████▍  | 77/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.4.attention.self.query.weight]Loading weights:  76%|███████▌  | 78/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.4.attention.self.value.bias]  Loading weights:  76%|███████▌  | 78/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.4.attention.self.value.bias]Loading weights:  77%|███████▋  | 79/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.4.attention.self.value.weight]Loading weights:  77%|███████▋  | 79/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.4.attention.self.value.weight]Loading weights:  78%|███████▊  | 80/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.4.intermediate.dense.bias]    Loading weights:  78%|███████▊  | 80/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.4.intermediate.dense.bias]Loading weights:  79%|███████▊  | 81/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.4.intermediate.dense.weight]Loading weights:  79%|███████▊  | 81/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.4.intermediate.dense.weight]Loading weights:  80%|███████▉  | 82/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.4.output.LayerNorm.bias]    Loading weights:  80%|███████▉  | 82/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.4.output.LayerNorm.bias]Loading weights:  81%|████████  | 83/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.4.output.LayerNorm.weight]Loading weights:  81%|████████  | 83/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.4.output.LayerNorm.weight]Loading weights:  82%|████████▏ | 84/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.4.output.dense.bias]      Loading weights:  82%|████████▏ | 84/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.4.output.dense.bias]Loading weights:  83%|████████▎ | 85/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.4.output.dense.weight]Loading weights:  83%|████████▎ | 85/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.4.output.dense.weight]Loading weights:  83%|████████▎ | 86/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.5.attention.output.LayerNorm.bias]Loading weights:  83%|████████▎ | 86/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.5.attention.output.LayerNorm.bias]Loading weights:  84%|████████▍ | 87/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.5.attention.output.LayerNorm.weight]Loading weights:  84%|████████▍ | 87/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.5.attention.output.LayerNorm.weight]Loading weights:  85%|████████▌ | 88/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.5.attention.output.dense.bias]      Loading weights:  85%|████████▌ | 88/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.5.attention.output.dense.bias]Loading weights:  86%|████████▋ | 89/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.5.attention.output.dense.weight]Loading weights:  86%|████████▋ | 89/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.5.attention.output.dense.weight]Loading weights:  87%|████████▋ | 90/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.5.attention.self.key.bias]      Loading weights:  87%|████████▋ | 90/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.5.attention.self.key.bias]Loading weights:  88%|████████▊ | 91/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.5.attention.self.key.weight]Loading weights:  88%|████████▊ | 91/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.5.attention.self.key.weight]Loading weights:  89%|████████▉ | 92/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.5.attention.self.query.bias]Loading weights:  89%|████████▉ | 92/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.5.attention.self.query.bias]Loading weights:  90%|█████████ | 93/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.5.attention.self.query.weight]Loading weights:  90%|█████████ | 93/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.5.attention.self.query.weight]Loading weights:  91%|█████████▏| 94/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.5.attention.self.value.bias]  Loading weights:  91%|█████████▏| 94/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.5.attention.self.value.bias]Loading weights:  92%|█████████▏| 95/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.5.attention.self.value.weight]Loading weights:  92%|█████████▏| 95/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.5.attention.self.value.weight]Loading weights:  93%|█████████▎| 96/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.5.intermediate.dense.bias]    Loading weights:  93%|█████████▎| 96/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.5.intermediate.dense.bias]Loading weights:  94%|█████████▍| 97/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.5.intermediate.dense.weight]Loading weights:  94%|█████████▍| 97/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.5.intermediate.dense.weight]Loading weights:  95%|█████████▌| 98/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.5.output.LayerNorm.bias]    Loading weights:  95%|█████████▌| 98/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.5.output.LayerNorm.bias]Loading weights:  96%|█████████▌| 99/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.5.output.LayerNorm.weight]Loading weights:  96%|█████████▌| 99/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.5.output.LayerNorm.weight]Loading weights:  97%|█████████▋| 100/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.5.output.dense.bias]     Loading weights:  97%|█████████▋| 100/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.5.output.dense.bias]Loading weights:  98%|█████████▊| 101/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.5.output.dense.weight]Loading weights:  98%|█████████▊| 101/103 [00:00<00:00, 550.16it/s, Materializing param=encoder.layer.5.output.dense.weight]Loading weights:  99%|█████████▉| 102/103 [00:00<00:00, 550.16it/s, Materializing param=pooler.dense.bias]                  Loading weights:  99%|█████████▉| 102/103 [00:00<00:00, 550.16it/s, Materializing param=pooler.dense.bias]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 550.16it/s, Materializing param=pooler.dense.weight]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 550.16it/s, Materializing param=pooler.dense.weight]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 714.57it/s, Materializing param=pooler.dense.weight]
+[1mBertModel LOAD REPORT[0m from: sentence-transformers/all-MiniLM-L6-v2
+Key                     | Status     |  | 
+------------------------+------------+--+-
+embeddings.position_ids | UNEXPECTED |  | 
+
+[3mNotes:
+- UNEXPECTED[3m	:can be ignored when loading from different task/architecture; not ok if you expect identical arch.[0m
+INFO:     Started server process [79]
+INFO:     Waiting for application startup.
+2026-02-22 07:27:06,086 - server - INFO - EmergentPulse AI backend started
+INFO:     Application startup complete.
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [79]
+INFO:     Stopping reloader process [42]
+INFO:     Will watch for changes in these directories: ['/app/backend']
+INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+INFO:     Started reloader process [342] using WatchFiles
+
+==> /var/log/supervisor/backend.out.log <==.
+        2. Verify the  collection in the database to see the  and  for new entries.
+        3. Re-examine the fix in . The environment variable loading logic is the primary suspect. Ensure  is called correctly or pass the key directly to the worker.
+     - Why fix this issue and what will be achieved with the fix? This is a critical business feature. The user (founder) needs to be notified of new leads.
+     - Status: IN PROGRESS
+     - Is recurring issue? N
+     - Should Test frontend/backend/both after fix? Backend.
+
+  - Issue 3: Complete and verify the Coner AI rebranding.
+     - Attempted fixes: Agent has run  on multiple files.
+     - Next debug checklist:
+        1. Run yarn run v1.22.22
+$ craco build
+Creating an optimized production build...
+Compiled with warnings.
+
+[eslint] 
+src/components/AnalyticsTab.js
+  Line 21:6:  React Hook useEffect has missing dependencies: 'fetchAnalytics' and 'fetchInsights'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+src/components/FeedbackTab.js
+  Line 18:41:  React Hook useEffect has a missing dependency: 'fetchFeedback'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/components/GoldenRulesTab.js
+  Line 31:6:  React Hook useEffect has missing dependencies: 'fetchProject' and 'fetchRules'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+src/components/KnowledgeTab.js
+  Line 29:6:  React Hook useEffect has missing dependencies: 'fetchFiles', 'fetchSources', and 'fetchSyncStatus'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+src/components/LeadsTab.js
+  Line 36:38:  React Hook useEffect has a missing dependency: 'fetchLeads'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/components/SandboxTab.js
+  Line 331:6:  React Hook useEffect has missing dependencies: 'initSession' and 'project.project_id'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  Line 377:6:  React Hook useEffect has a missing dependency: 'startListeningInner'. Either include it or remove the dependency array                     react-hooks/exhaustive-deps
+  Line 394:6:  React Hook useCallback has a missing dependency: 'animateMicBars'. Either include it or remove the dependency array                        react-hooks/exhaustive-deps
+  Line 534:6:  React Hook useCallback has a missing dependency: 'speakTTSChunked'. Either include it or remove the dependency array                       react-hooks/exhaustive-deps
+  Line 558:6:  React Hook useCallback has a missing dependency: 'speakNextSentence'. Either include it or remove the dependency array                     react-hooks/exhaustive-deps
+  Line 705:6:  React Hook useCallback has a missing dependency: 'startListeningInner'. Either include it or remove the dependency array                   react-hooks/exhaustive-deps
+
+src/pages/ProjectDetail.js
+  Line 26:40:  React Hook useEffect has a missing dependency: 'fetchProject'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+File sizes after gzip:
+
+  273.22 kB  build/static/js/main.b6ddb759.js
+  12.03 kB   build/static/css/main.c7f90459.css
+
+The project was built assuming it is hosted at /.
+You can control this with the homepage field in your package.json.
+
+The build folder is ready to be deployed.
+You may serve it with a static server:
+
+  yarn global add serve
+  serve -s build
+
+Find out more about deployment here:
+
+  https://cra.link/deployment
+
+Done in 16.55s..
+        2. Run frontend: stopped
+frontend: started.
+        3. Use the screenshot tool on the login page and main dashboard to verify the logo and name are updated.
+     - Why fix this issue and what will be achieved with the fix? To complete the user's latest explicit request for branding.
+     - Status: IN PROGRESS
+     - Is recurring issue? N
+     - Should Test frontend/backend/both after fix? Frontend.
+     - Blocked on other issue: No.
+
+  - Issue 4: User verification for the Talk to Corner (Copilot) feature enhancement.
+     - Attempted fixes: The agent enhanced  to use an LLM for conversation analysis instead of returning raw counts.
+     - Next debug checklist: Ask the user to test the Talk to Corner tab again and confirm if the responses are now insightful and meet their expectations.
+     - Why fix this issue and what will be achieved with the fix? To confirm that the feature is now working as the user intended.
+     - Status: USER VERIFICATION PENDING
+     - Is recurring issue? N
+     - Should Test frontend/backend/both after fix? Frontend (user-facing).
+     - Blocked on other issue: No.
+
+  - Issue 5: Critical security vulnerability in  endpoint.
+     - Attempted fixes: None. This has been carried over from a previous session.
+     - Next debug checklist:
+        - **File:** 
+        - **Function:** 
+        - **Fix:** Add logic to check the request's  or  header against the project's  from the database. If there's no match, return a  error.
+     - Why fix this issue and what will be achieved with the fix? To prevent unauthorized embedding of the chat widget, which is a critical security measure for a multi-tenant platform.
+     - Status: NOT STARTED
+     - Is recurring issue? Y
+     - Should Test frontend/backend/both after fix? Backend.
+     - Blocked on other issue: No.
 
 **In progress Task List**:
-  - None.
+- Task 1: Rebranding to Coner AI
+    - Where to resume: The file modifications are done. The next step is to build the frontend, restart the services, and visually verify the changes.
+    - What will be achieved with this? The application's UI will reflect the new brand identity as requested by the user.
+    - Status: IN PROGRESS
+    - Should Test frontend/backend/both after fix? Frontend.
+    - Blocked on something: No.
 
 **Upcoming and Future Tasks**
     Upcoming Tasks:
-    - (P2) Create backend tests for the new knowledge and leads API endpoints to prevent future regressions.
-    - (P3) Refactor the monolithic  into a modular structure (e.g., routes, services, models).
-    - (P3) Address duplicated voice logic between  and .
+    - (P2) Create backend tests for the new knowledge, leads, and analytics API endpoints.
+    - (P3) Address duplicated voice logic between  and  by creating a shared hook or module.
 
     Future Tasks:
     - Add OpenAPI/Swagger documentation for the backend API.
+    - Formalize the Admin Dashboard by creating a dedicated, role-protected frontend page for the  endpoint.
 
 **Completed work in this session**
-- **CRM-Style Leads Dashboard:**
-  - Revamped  into a full-featured table with search, filtering, and an Export to CSV option.
-  - Implemented a View Ticket modal for detailed lead viewing and editing.
-  - Added an in-line status change dropdown in the leads table.
-  - Extended the  model and added update/export endpoints in .
-
-- **RAG & Knowledge Management:**
-  - Implemented a multi-format document upload pipeline (PDF, DOCX, TXT, etc.) in .
-  - Added website crawling, re-syncing, and navigation intelligence features.
-  - Built a new UI in  to manage document uploads and website sync.
-
-- **Chat Memory & UI:**
-  - Implemented session-based () and persistent () chat memory modes.
-  - Added a New Chat button to the widget and sandbox UI.
-
-- **Voice Experience Upgrade:**
-  - Upgraded voice mode with intelligent voice selection, sentence-chunked TTS, and real-time visualizations using the Web Audio API in .
-
-- **Critical Bug Fixes:**
-  - Resolved multiple  crashes in  by reordering hooks and function declarations.
-  - Fixed a voice interrupt bug where only the first word of the user's speech was being sent to the AI.
+- **Admin Stats Endpoint**: Implemented a secure, read-only endpoint at  to fetch platform-wide metrics, with support for JSON, table, and CSV formats.
+- **Talk to Corner Copilot Enhancement**: The service was upgraded to use an LLM to provide qualitative insights from conversations instead of just quantitative data.
+- **Bug Fix ()**: Resolved a  crash in the Test Bot () component.
+- **Analytics Frontend**: Implemented Insight Cards and the Talk to Corner tab in .
+- **Backend Modularization**: Created a new backend structure with  and  directories to house business logic and background tasks, making  more of a router.
+- **API Hardening**: Added Pydantic-based request validation and error handling to the new API endpoints.
 
 **Earlier issues found/mentioned but not fixed**
-   - **Architectural Debt:** The backend logic is centralized in a very large  file, making it difficult to maintain.
-   - **Code Duplication:** Voice interaction logic is heavily duplicated between  and .
-   - **Missing Tests:** The backend lacks an automated test suite.
+   - **Architectural Debt**:  is still a very large file, although some logic has been moved out. It could be further broken down.
+   - **Missing Tests**: The backend lacks an automated test suite, increasing the risk of regressions.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- **Backend**: FastAPI, MongoDB, Pydantic, Server-Sent Events (SSE), RAG with ,  for file uploads, various document parsing libraries (, ).
-- **Frontend**: React, Shadcn/UI, TailwindCSS, Web Audio API for voice visualization,  and  for chat memory.
+- **Backend**: FastAPI, MongoDB, Pydantic,  for background tasks.
+- **Frontend**: React, Shadcn/UI, TailwindCSS.
+- **Integrations**: Resend for emails, Emergent LLM Key for OpenAI.
 
 **key DB schema**
-- **Lead (Extended)**: 
-- **Project (Extended)**: Now includes  to toggle between support and acquisition.
-- **KnowledgeSource**: Schema unchanged, but now populated with richer metadata from document uploads () and website crawls ().
+- ,  (agents), , , .
+- **New Implicit Collections**:  (tracks email worker status),  (stores insights from conversations).
 
 **changes in tech stack**
-- **New Backend Dependencies**: , , , , , , .
+- **New Dependency**:  (for emails).
+- **New Environment Variables**: , .
 
 **All files of reference**
-- : Heavily modified to add all new backend logic for knowledge ingestion and the leads CRM.
-- : Completely rewritten to implement the CRM-style dashboard.
-- : Completely rewritten to support the new RAG features.
-- : Significantly refactored to fix critical runtime errors.
-- : Modified for the voice experience upgrade, new memory system, and interrupt bug fix.
-- : Modified to add the  toggle.
+- **Created**:
+  - 
+  - 
+  - 
+  - 
+  - 
+- **Modified**:
+  -  (major changes for routing, new endpoints, and worker integration).
+  -  (language support added).
+  -  (debug attempt).
+  -  (new UI for insights/copilot).
+  -  (bug fix).
+  - , , , ,  (branding changes).
+  - .
 
 **Areas that need refactoring**:
-- **/app/backend/server.py**: The file is now extremely large and handles routes, models, services, and utilities for all features. It urgently needs to be broken down into a modular structure.
-- **Voice Logic**: The complex voice processing logic remains duplicated in  and , making maintenance difficult. Consolidating this into a shared React hook is recommended.
+- **/app/backend/server.py**: Still contains a lot of mixed logic and could be further slimmed down by moving endpoint logic into the respective service files.
+- **Voice Logic Duplication**: Logic is duplicated in  and .
 
 **key api endpoints**
-- **New Endpoints:**
-    -  (POST)
-    -  (GET)
-    -  (DELETE)
-    -  (POST)
-    -  (PUT)
-    -  (GET)
-- **Updated Endpoints:**
-    -  (PUT): Now handles  updates.
+- **New Endpoints**:
+    - 
+    - 
+    - 
+- **Internal Triggers**:
+    - Lead capture now triggers the .
+    - User feedback ( endpoint) now triggers the .
 
 **Critical Info for New Agent**
-- **Prioritize Testing:** The last session involved rapid feature development with minimal testing. Your first priority should be to stabilize the application by testing the most recent and riskiest changes: the  tab UI, the refactored , and the new  tab functionality.
-- **Address Technical Debt:** The monolithic backend () and duplicated frontend logic are becoming significant liabilities. Plan to address these after stabilizing the current feature set.
-- **Security First:** The whitelisted domains vulnerability is a critical security flaw in a multi-tenant app and should be fixed with high priority.
+- **TOP PRIORITY**: The user has reported two critical, show-stopping bugs: the chat widget is not appearing on websites, and lead summary emails are not being sent. You must prioritize fixing these two issues above all else. The rebranding task is secondary.
+- **Debugging Email Worker**: The  is not being loaded correctly in the async worker process. The previous fix was insufficient. Focus on ensuring the environment variable is accessible at the moment the  function is called. Check the backend logs for the exact failure reason.
+- **Debugging Widget**: The widget disappearance is almost certainly a JavaScript error introduced during the addition of language support. Use the browser's developer console on an affected page to find the error.
+- **Verify before Committing**: Do not assume fixes are working. After fixing the email issue, trigger a lead capture and check the logs and database to confirm the email status is sent. After fixing the widget, load a page to see it render.
 
 **documents and test reports created in this job**
-- No new official documents or reports were created in this session.
+- 
+- 
 
 **Last 10 User Messages and any pending HUMAN messages** 
- - **Latest:** On the leads page give a drop down in each lead to change the status of the leads. And also fix the UI of the page that opens after clicking on the view button. (Status: Implemented, verification pending)
- - Request to implement a full CRM-style leads dashboard. (Status: Completed)
- - Request to fix a bug where interrupting AI speech only sent the first word. (Status: Completed)
- - User reported the app was crashing when clicking test bot. (Status: Believed to be fixed via refactoring, testing pending)
- - Request to implement multi-format document ingestion for the RAG pipeline. (Status: Completed, testing pending)
- - Request for session-based chat memory and a New Chat button. (Status: Completed)
- - Request to add a UI toggle to enable Acquisition Mode for lead capture. (Status: Completed)
- - User asked why they couldn't test the leads feature. (Status: Answered and resolved)
- - User asked how to test the leads feature. (Status: Answered)
+ - add this as project logo everywhere and the name of the saas is Coner AI. (In Progress)
+ - add this as a non-destructive, temporary admin endpoint... (Completed)
+ - can you also give me the emails and names of the 6 users? (Completed)
+ - Run read-only MongoDB queries on the production database... (Completed)
+ - Hey if i deploy this app now and start on boarding users... how can i see all the stats...? (Answered, led to admin endpoint)
+ - Not receiving the mail what should i do? (Issue identified, fix attempted but failed)
+ - Okay so now there are 2 issues 1 the chat box is no longer visible... and the user is not getting the summary mail... (Issues identified, not yet resolved)
+ - User reports the Talk to Corner AI is giving unhelpful responses. (Enhancement implemented, user verification pending)
+ - User reports a crash: switchMemoryMode is not defined. (Completed)
+ - User provides prompt to proceed with phases 2, 3, and 4. (In Progress)
 
 **Project Health Check:**
-- **Broken**: The stability of the Test Bot feature () is unknown after extensive refactoring to fix crashes.
-- **Vulnerable**: The  security flaw remains unpatched.
-- **Mocked**: No mocked components.
+- **Broken**:
+    - The core embeddable chat widget feature is non-functional (not visible).
+    - A key business process (lead email notification) is failing.
+- **Vulnerable**: A critical security flaw ( check is missing) remains unpatched in .
+- **Mocked**: None.
 
 **3rd Party Integrations**
-- **OpenAI GPT-4o-mini**: Used for chat generation via the Emergent LLM Key.
+- **OpenAI GPT-4o-mini**: Used for chat generation and copilot analysis via Emergent LLM Key.
 - **Emergent-managed Google Auth**: Handles user authentication.
-- **Browser Web Speech API**: Native browser API for speech-to-text and text-to-speech.
+- **Resend**: Used for transactional email. Requires .
+- **Browser Web Speech API**: Used for voice input/output in the widget.
 
 **Testing status**
-  - Testing agent used after significant changes: NO. Major features like knowledge ingestion and the leads CRM were implemented without using the testing agent.
-  - Troubleshoot agent used after agent stuck in loop: NO. The agent self-resolved a recurring crash issue after several attempts.
-  - Test files created: None.
-  - Known regressions: High risk of regressions in the Test Bot (Sandbox) functionality due to the recent refactoring.
+  - Testing agent used after significant changes: NO
+  - Troubleshoot agent used after agent stuck in loop: NO
+  - Test files created: 
+  - Known regressions: Chat widget visibility, email sending functionality.
 
 **Credentials to test flow:**
-Authentication is handled by Emergent-managed Google Auth. The testing agent can manage this flow automatically.
+- User authentication is handled via Emergent-managed Google Auth.
+- The  endpoint requires a header  with a value matching the  environment variable.
 
 **What agent forgot to execute**
-- **Testing:** The agent consistently skipped end-to-end testing for major features (Knowledge RAG, Leads CRM) and critical bug-fix refactoring ().
-- **Security:** The critical  vulnerability identified early on was never prioritized or fixed.
-- **Architectural Refactoring:** Despite the growing complexity, the agent continued to add features to the monolithic  file and did not address the duplicated voice logic.</analysis>
+- The agent failed to resolve the critical widget visibility and email sending bugs after they were reported.
+- The agent has consistently ignored the critical security vulnerability related to  that has been present since the initial handoff.
+- The agent did not perform any verification testing after applying the branding changes, leaving the task half-finished.</analysis>

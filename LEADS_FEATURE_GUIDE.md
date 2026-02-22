@@ -14,7 +14,7 @@
 ### **Step 1: Access Your Project**
 
 1. **Login to EmergentPulse AI**
-   - Go to: https://multi-tenant-ai-7.preview.emergentagent.com
+   - Go to: https://rag-chat-widget-1.preview.emergentagent.com
    - Click "Get Started" and login with Google
 
 2. **Navigate to Project**
@@ -55,7 +55,7 @@
 2. **Copy the Embed Script**
    - You'll see HTML code like:
    ```html
-   <script src="https://multi-tenant-ai-7.preview.emergentagent.com/api/widget.js" 
+   <script src="https://rag-chat-widget-1.preview.emergentagent.com/api/widget.js" 
            data-project-key="YOUR_PROJECT_KEY"></script>
    ```
    - Copy this entire script
@@ -101,7 +101,7 @@ Create a file called `test-leads.html`:
     </div>
 
     <!-- PASTE YOUR WIDGET EMBED CODE HERE -->
-    <script src="https://multi-tenant-ai-7.preview.emergentagent.com/api/widget.js" 
+    <script src="https://rag-chat-widget-1.preview.emergentagent.com/api/widget.js" 
             data-project-key="YOUR_PROJECT_KEY"></script>
 
 </body>
