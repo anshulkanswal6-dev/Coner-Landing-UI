@@ -630,6 +630,10 @@ async def widget_message_stream(data: ChatMessageRequest, request: Request):
     api_key = request.headers.get("x-project-key", "")
     project = await get_project_by_api_key(api_key)
     project_id = project["project_id"]
+    
+    # NEW: Extract language from header (Phase 1)
+    language = request.headers.get("x-user-language", None)
+    
     conv = await db.conversations.find_one({"session_id": data.session_id}, {"_id": 0})
     if not conv:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -641,7 +645,7 @@ async def widget_message_stream(data: ChatMessageRequest, request: Request):
         "created_at": datetime.now(timezone.utc).isoformat()
     })
 
-    ctx = await build_chat_context(project, data.session_id, data.content, data.current_url)
+    ctx = await build_chat_context(project, data.session_id, data.content, data.current_url, language)
 
     if ctx["type"] == "correction":
         assistant_msg_id = gen_id("msg_")
@@ -685,7 +689,7 @@ async def widget_message_stream(data: ChatMessageRequest, request: Request):
             yield f"data: {json.dumps({'token': full_response})}\n\n"
 
         # Post-process: lead extraction, store message
-        final_text = await store_lead_if_present(full_response, project_id, data.session_id)
+        final_text = await store_lead_if_present(full_response, project_id, data.session_id, project)
         await db.messages.insert_one({
             "message_id": assistant_msg_id, "session_id": data.session_id, "project_id": project_id,
             "role": "assistant", "content": final_text,
