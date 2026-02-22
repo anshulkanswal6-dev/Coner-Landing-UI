@@ -1,0 +1,102 @@
+﻿[36mvite v7.3.1 [32mbuilding client environment for production...[36m[39m
+transforming...
+[32mΓ£ô[39m 4 modules transformed.
+node.exe : [31mΓ£ù[39m 
+Build failed in 173ms
+At C:\Program 
+Files\nodejs\npx.ps1:29 
+char:3
++   & $NODE_EXE $NPX_CLI_JS 
+$args
++   ~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~
+    + CategoryInfo          
+    : NotSpecified: ([31m  
+  Γ£ù[39m Build failed i   
+ n 173ms:String) [], Rem    
+oteException
+    + FullyQualifiedErrorId 
+    : NativeCommandError
+ 
+[31merror during build:
+[31m[@tailwindcss/vite:gene
+rate:build] Cannot apply 
+unknown utility class `hover
+:shadow-[0_0_20px_rgba(108,`
+[31m
+file: [36mC:/Users/Anshul K
+answal/OneDrive/Desktop/Web 
+dev workspace/Kaam Ke 
+Projects/Coner AI Waitlistin
+g/src/index.css[31m
+    at onInvalidCandidate (f
+ile:///C:/Users/Anshul%20Kan
+swal/OneDrive/Desktop/Web%20
+dev%20workspace/Kaam%20Ke%20
+Projects/Coner%20AI%20Waitli
+sting/node_modules/tailwindc
+ss/dist/chunk-O3SHLFNR.mjs:2
+1:1511)
+    at $e (file:///C:/Users/
+Anshul%20Kanswal/OneDrive/De
+sktop/Web%20dev%20workspace/
+Kaam%20Ke%20Projects/Coner%2
+0AI%20Waitlisting/node_modul
+es/tailwindcss/dist/chunk-O3
+SHLFNR.mjs:16:36740)
+    at file:///C:/Users/Ansh
+ul%20Kanswal/OneDrive/Deskto
+p/Web%20dev%20workspace/Kaam
+%20Ke%20Projects/Coner%20AI%
+20Waitlisting/node_modules/t
+ailwindcss/dist/chunk-O3SHLF
+NR.mjs:21:355
+    at Ar (file:///C:/Users/
+Anshul%20Kanswal/OneDrive/De
+sktop/Web%20dev%20workspace/
+Kaam%20Ke%20Projects/Coner%2
+0AI%20Waitlisting/node_modul
+es/tailwindcss/dist/chunk-O3
+SHLFNR.mjs:3:1733)
+    at I (file:///C:/Users/A
+nshul%20Kanswal/OneDrive/Des
+ktop/Web%20dev%20workspace/K
+aam%20Ke%20Projects/Coner%20
+AI%20Waitlisting/node_module
+s/tailwindcss/dist/chunk-O3S
+HLFNR.mjs:3:1377)
+    at Ce (file:///C:/Users/
+Anshul%20Kanswal/OneDrive/De
+sktop/Web%20dev%20workspace/
+Kaam%20Ke%20Projects/Coner%2
+0AI%20Waitlisting/node_modul
+es/tailwindcss/dist/chunk-O3
+SHLFNR.mjs:21:172)
+    at Gi (file:///C:/Users/
+Anshul%20Kanswal/OneDrive/De
+sktop/Web%20dev%20workspace/
+Kaam%20Ke%20Projects/Coner%2
+0AI%20Waitlisting/node_modul
+es/tailwindcss/dist/chunk-O3
+SHLFNR.mjs:38:294)
+    at async ao (file:///C:/
+Users/Anshul%20Kanswal/OneDr
+ive/Desktop/Web%20dev%20work
+space/Kaam%20Ke%20Projects/C
+oner%20AI%20Waitlisting/node
+_modules/tailwindcss/dist/ch
+unk-O3SHLFNR.mjs:38:631)
+    at async vf (file:///C:/
+Users/Anshul%20Kanswal/OneDr
+ive/Desktop/Web%20dev%20work
+space/Kaam%20Ke%20Projects/C
+oner%20AI%20Waitlisting/node
+_modules/tailwindcss/dist/ch
+unk-O3SHLFNR.mjs:38:1406)
+    at async uu (file:///C:/
+Users/Anshul%20Kanswal/OneDr
+ive/Desktop/Web%20dev%20work
+space/Kaam%20Ke%20Projects/C
+oner%20AI%20Waitlisting/node
+_modules/@tailwindcss/node/d
+ist/index.mjs:10:3458)[39m
