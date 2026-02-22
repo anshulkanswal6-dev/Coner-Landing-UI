@@ -24,6 +24,8 @@ var AUDIO_CTX=null,ANALYSER=null,MIC_STREAM=null,ANIM_FRAME=null;
 var ACTIVE_SSE_READER=null;
 /* Debounce localStorage */
 var SAVE_TIMEOUT=null;
+/* NEW: Language support (Phase 3) */
+var USER_LANG=null;
 
 /* ── Persistence (debounced, mode-aware) ── */
 var LS_KEY='ep_data_'+PK;
