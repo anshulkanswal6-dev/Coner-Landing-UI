@@ -27,6 +27,7 @@ from workers.email_summary_worker import trigger_email_summary
 from workers.learning_extraction_worker import trigger_learning_extraction, search_learned_patterns
 from workers.insight_aggregator import aggregate_insights, trigger_insight_aggregation
 from services.copilot_service import FounderCopilotService
+from services.platform_admin_service import get_platform_stats
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -1492,6 +1493,25 @@ async def refresh_insights(
     except Exception as e:
         logger.error(f"Error triggering insight refresh: {e}")
         raise HTTPException(status_code=500, detail="Failed to trigger insight aggregation")
+
+
+# ─── NEW: Platform Admin Endpoints ───
+
+@api_router.get("/admin/platform/stats")
+async def get_platform_statistics(user: dict = Depends(get_current_user)):
+    """
+    Get platform-wide statistics for admin dashboard.
+    Shows total users, projects, conversations, messages, leads, etc.
+    
+    NOTE: In production, you should add admin role check here.
+    For now, any authenticated user can access (you can restrict later).
+    """
+    try:
+        stats = await get_platform_stats(db)
+        return stats
+    except Exception as e:
+        logger.error(f"Error fetching platform stats: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch platform statistics")
 
 
 # ───────────────────────────────────────────────────────────────────────────────
