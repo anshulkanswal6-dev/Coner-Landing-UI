@@ -290,21 +290,36 @@ Respond in markdown format when helpful. Be helpful, accurate, and follow all ru
 
     return {"type": "rag", "chat_messages": chat_messages, "system_prompt": system_prompt, "chunks_used": len(relevant_chunks), "patterns_used": len(learned_patterns)}
 
-async def store_lead_if_present(response_text: str, project_id: str, session_id: str):
-    """Extract lead JSON from response and store it."""
+async def store_lead_if_present(response_text: str, project_id: str, session_id: str, project: dict):
+    """Extract lead JSON from response and store it. Trigger email worker if in acquisition mode."""
     lead_match = re.search(r'\{"lead":\s*\{[^}]+\}\}', response_text)
     if lead_match:
         try:
             lead_data = json.loads(lead_match.group())["lead"]
+            lead_id = gen_id("lead_")
+            
+            # NEW: Add summary_email_status field (Phase 1)
             await db.leads.insert_one({
-                "lead_id": gen_id("lead_"), "project_id": project_id,
-                "session_id": session_id, "name": lead_data.get("name", ""),
-                "email": lead_data.get("email", ""), "phone": lead_data.get("phone", ""),
-                "requirements": lead_data.get("requirements", ""), "status": "New",
+                "lead_id": lead_id, 
+                "project_id": project_id,
+                "session_id": session_id, 
+                "name": lead_data.get("name", ""),
+                "email": lead_data.get("email", ""), 
+                "phone": lead_data.get("phone", ""),
+                "requirements": lead_data.get("requirements", ""), 
+                "status": "New",
+                "summary_email_status": "pending",  # NEW: Phase 1 - Email Summary
                 "created_at": datetime.now(timezone.utc).isoformat()
             })
+            
+            # NEW: Trigger email summary worker (Phase 1 - Fire-and-forget)
+            if project.get("agent_mode") == "acquisition" and lead_data.get("email"):
+                trigger_email_summary(db, project_id, lead_id, session_id)
+                logger.info(f"Email summary triggered for lead {lead_id}")
+            
             return response_text.replace(lead_match.group(), "").strip()
-        except Exception:
+        except Exception as e:
+            logger.error(f"Lead storage error: {e}")
             pass
     return response_text
 
