@@ -43,6 +43,20 @@ export default function LeadsTab({ projectId }) {
     finally { setLoading(false); }
   };
 
+  const updateLeadStatus = async (leadId, newStatus) => {
+    try {
+      await axios.put(
+        `${API}/projects/${projectId}/leads/${leadId}`,
+        { status: newStatus },
+        { withCredentials: true }
+      );
+      setLeads(prev => prev.map(l => l.lead_id === leadId ? { ...l, status: newStatus } : l));
+      toast.success(`Lead moved to ${newStatus}`);
+    } catch {
+      toast.error("Failed to update status");
+    }
+  };
+
   const openLeadModal = (lead) => {
     setSelectedLead(lead);
     setAdminNotes(lead.admin_notes || "");
@@ -239,9 +253,27 @@ export default function LeadsTab({ projectId }) {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`text-xs px-2 py-1 rounded-full ${STATUS_COLORS[lead.status || 'New']}`}>
-                        {lead.status || "New"}
-                      </span>
+                      <Select 
+                        value={lead.status || "New"} 
+                        onValueChange={(newStatus) => updateLeadStatus(lead.lead_id, newStatus)}
+                      >
+                        <SelectTrigger className="w-32 h-7 text-xs border-white/10 bg-zinc-800/50">
+                          <SelectValue>
+                            <span className={`px-2 py-0.5 rounded-full ${STATUS_COLORS[lead.status || 'New']}`}>
+                              {lead.status || "New"}
+                            </span>
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent className="dark bg-zinc-900 border-white/10">
+                          {STATUSES.map(s => (
+                            <SelectItem key={s} value={s} className="text-xs">
+                              <span className={`px-2 py-0.5 rounded-full ${STATUS_COLORS[s]}`}>
+                                {s}
+                              </span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </td>
                     <td className="px-4 py-3 text-xs text-zinc-500">
                       {formatDate(lead.created_at)}
@@ -265,123 +297,127 @@ export default function LeadsTab({ projectId }) {
         </div>
       </div>
 
-      {/* Lead Details Modal */}
+      {/* Lead Details Modal - FIXED UI */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="dark bg-zinc-900 border-white/10 max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="dark bg-zinc-950 border-white/20 max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-xl">Lead Details</DialogTitle>
+            <DialogTitle className="text-xl font-semibold text-white">Lead Details</DialogTitle>
           </DialogHeader>
 
           {selectedLead && (
-            <div className="space-y-6 mt-4">
-              {/* User Details */}
-              <div>
-                <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                  <User className="w-4 h-4 text-[#7C3AED]" />
-                  User Information
-                </h4>
-                <div className="grid md:grid-cols-2 gap-3 bg-zinc-800/30 border border-white/5 rounded-lg p-4">
-                  <div>
-                    <Label className="text-xs text-zinc-500">Full Name</Label>
-                    <p className="text-sm mt-1">{selectedLead.name || "N/A"}</p>
+            <div className="space-y-6 mt-6">
+              {/* User Details Section */}
+              <div className="bg-zinc-900/50 border border-white/10 rounded-lg p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-8 h-8 rounded-full bg-[#7C3AED]/20 flex items-center justify-center">
+                    <User className="w-4 h-4 text-[#7C3AED]" />
                   </div>
-                  <div>
-                    <Label className="text-xs text-zinc-500">Email</Label>
-                    <p className="text-sm mt-1">{selectedLead.email || "N/A"}</p>
+                  <h4 className="text-sm font-semibold text-white">User Information</h4>
+                </div>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-zinc-400">Full Name</Label>
+                    <p className="text-sm text-white font-medium">{selectedLead.name || "N/A"}</p>
                   </div>
-                  <div>
-                    <Label className="text-xs text-zinc-500">Phone</Label>
-                    <p className="text-sm mt-1">{selectedLead.phone || "N/A"}</p>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-zinc-400">Email</Label>
+                    <p className="text-sm text-white">{selectedLead.email || "N/A"}</p>
                   </div>
-                  <div>
-                    <Label className="text-xs text-zinc-500">Lead ID</Label>
-                    <p className="text-sm mt-1 font-mono">{selectedLead.lead_id}</p>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-zinc-400">Phone</Label>
+                    <p className="text-sm text-white">{selectedLead.phone || "N/A"}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-zinc-400">Lead ID</Label>
+                    <p className="text-sm text-zinc-400 font-mono">{selectedLead.lead_id}</p>
                   </div>
                 </div>
               </div>
 
-              {/* Query Information */}
-              <div>
-                <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                  <MessageSquare className="w-4 h-4 text-[#7C3AED]" />
-                  Query Information
-                </h4>
-                <div className="space-y-3 bg-zinc-800/30 border border-white/5 rounded-lg p-4">
-                  <div>
-                    <Label className="text-xs text-zinc-500">Query Objective</Label>
-                    <p className="text-sm mt-1">
+              {/* Query Information Section */}
+              <div className="bg-zinc-900/50 border border-white/10 rounded-lg p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-8 h-8 rounded-full bg-[#7C3AED]/20 flex items-center justify-center">
+                    <MessageSquare className="w-4 h-4 text-[#7C3AED]" />
+                  </div>
+                  <h4 className="text-sm font-semibold text-white">Query Information</h4>
+                </div>
+                <div className="space-y-4">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-zinc-400">Query Objective</Label>
+                    <p className="text-sm text-white leading-relaxed">
                       {selectedLead.query_objective || selectedLead.requirements || "No specific objective provided"}
                     </p>
                   </div>
-                  <div>
-                    <Label className="text-xs text-zinc-500">Detailed User Need</Label>
-                    <p className="text-sm mt-1">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-zinc-400">Detailed User Need</Label>
+                    <p className="text-sm text-white leading-relaxed">
                       {selectedLead.user_need || selectedLead.details || "No additional details provided"}
                     </p>
                   </div>
-                  {selectedLead.conversation_summary && (
-                    <div>
-                      <Label className="text-xs text-zinc-500">Conversation Summary</Label>
-                      <p className="text-sm mt-1 text-zinc-400">{selectedLead.conversation_summary}</p>
-                    </div>
-                  )}
                 </div>
               </div>
 
-              {/* Availability */}
+              {/* Availability Section */}
               {selectedLead.availability && (
-                <div>
-                  <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-[#7C3AED]" />
-                    Availability for Meeting
-                  </h4>
-                  <div className="bg-zinc-800/30 border border-white/5 rounded-lg p-4">
-                    <p className="text-sm">{selectedLead.availability}</p>
+                <div className="bg-zinc-900/50 border border-white/10 rounded-lg p-5">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-8 h-8 rounded-full bg-[#7C3AED]/20 flex items-center justify-center">
+                      <Calendar className="w-4 h-4 text-[#7C3AED]" />
+                    </div>
+                    <h4 className="text-sm font-semibold text-white">Availability for Meeting</h4>
                   </div>
+                  <p className="text-sm text-white">{selectedLead.availability}</p>
                 </div>
               )}
 
               {/* Admin Response Section */}
-              <div>
-                <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                  <Building className="w-4 h-4 text-[#7C3AED]" />
-                  Admin Response
-                </h4>
-                <div className="space-y-4 bg-zinc-800/30 border border-white/5 rounded-lg p-4">
-                  <div>
-                    <Label className="text-xs mb-2">Response Method</Label>
+              <div className="bg-gradient-to-br from-[#7C3AED]/10 to-transparent border border-[#7C3AED]/30 rounded-lg p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-8 h-8 rounded-full bg-[#7C3AED]/30 flex items-center justify-center">
+                    <Building className="w-4 h-4 text-[#7C3AED]" />
+                  </div>
+                  <h4 className="text-sm font-semibold text-white">Admin Response</h4>
+                </div>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs text-zinc-300 font-medium">Response Method</Label>
                     <Select value={responseMethod} onValueChange={setResponseMethod}>
-                      <SelectTrigger className="bg-zinc-900 border-white/10">
+                      <SelectTrigger className="bg-zinc-900 border-white/20 text-white h-10">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="dark bg-zinc-900 border-white/10">
-                        <SelectItem value="email">Email</SelectItem>
-                        <SelectItem value="phone">Phone Call</SelectItem>
-                        <SelectItem value="whatsapp">WhatsApp</SelectItem>
-                        <SelectItem value="meeting">Schedule Meeting</SelectItem>
+                        <SelectItem value="email">📧 Email</SelectItem>
+                        <SelectItem value="phone">📞 Phone Call</SelectItem>
+                        <SelectItem value="whatsapp">💬 WhatsApp</SelectItem>
+                        <SelectItem value="meeting">🗓️ Schedule Meeting</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
-                  <div>
-                    <Label className="text-xs mb-2">Admin Notes</Label>
+                  <div className="space-y-2">
+                    <Label className="text-xs text-zinc-300 font-medium">Admin Notes</Label>
                     <Textarea
                       value={adminNotes}
                       onChange={(e) => setAdminNotes(e.target.value)}
                       placeholder="Add internal notes, action items, or follow-up details..."
-                      className="bg-zinc-900 border-white/10 min-h-[100px]"
+                      className="bg-zinc-900 border-white/20 text-white placeholder:text-zinc-500 min-h-[120px]"
                     />
                   </div>
 
-                  <div>
-                    <Label className="text-xs mb-2">Mark Status</Label>
+                  <div className="space-y-2">
+                    <Label className="text-xs text-zinc-300 font-medium">Mark Status</Label>
                     <Select value={leadStatus} onValueChange={setLeadStatus}>
-                      <SelectTrigger className="bg-zinc-900 border-white/10">
+                      <SelectTrigger className="bg-zinc-900 border-white/20 text-white h-10">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="dark bg-zinc-900 border-white/10">
                         {STATUSES.map(s => (
-                          <SelectItem key={s} value={s}>{s}</SelectItem>
+                          <SelectItem key={s} value={s}>
+                            <span className={`px-2 py-1 rounded-full ${STATUS_COLORS[s]}`}>
+                              {s}
+                            </span>
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -390,9 +426,9 @@ export default function LeadsTab({ projectId }) {
                   <Button
                     onClick={saveLeadDetails}
                     disabled={saving}
-                    className="w-full bg-[#7C3AED] hover:bg-[#6D28D9] text-white"
+                    className="w-full bg-[#7C3AED] hover:bg-[#6D28D9] text-white h-10 font-medium"
                   >
-                    {saving ? "Saving..." : "Save & Update Lead"}
+                    {saving ? "Saving..." : "💾 Save & Update Lead"}
                   </Button>
                 </div>
               </div>
