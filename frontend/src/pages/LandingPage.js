@@ -28,10 +28,8 @@ export default function LandingPage() {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-[#7C3AED] flex items-center justify-center">
-              <Zap className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-heading font-bold text-lg">EmergentPulse</span>
+            <img src="/coner-logo.png" alt="Coner AI" className="w-8 h-8 rounded-lg" />
+            <span className="font-heading font-bold text-lg">Coner AI</span>
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
             <a href="#features" className="hover:text-[#7C3AED] transition-colors">Features</a>

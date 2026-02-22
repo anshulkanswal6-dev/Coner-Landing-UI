@@ -25,10 +25,8 @@ export default function DashboardLayout({ children }) {
         <div className="flex flex-col h-full p-4">
           <div className="flex items-center justify-between mb-8">
             <Link to="/dashboard" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-[#7C3AED] flex items-center justify-center">
-                <Zap className="w-4 h-4 text-white" />
-              </div>
-              <span className="font-heading font-bold text-sm">EmergentPulse</span>
+              <img src="/coner-logo.png" alt="Coner AI" className="w-8 h-8 rounded-lg" />
+              <span className="font-heading font-bold text-sm">Coner AI</span>
             </Link>
             <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-zinc-400 hover:text-white">
               <X className="w-5 h-5" />
