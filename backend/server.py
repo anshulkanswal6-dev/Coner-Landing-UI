@@ -1514,6 +1514,176 @@ async def get_platform_statistics(user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=500, detail="Failed to fetch platform statistics")
 
 
+# ─── NEW: Admin Debug Stats Endpoint (Read-Only) ───
+
+ADMIN_DEBUG_KEY = os.environ.get('ADMIN_DEBUG_KEY', '')
+
+@api_router.get("/admin/stats")
+async def get_admin_stats(request: Request, view: str = None, format: str = None):
+    """
+    Admin debug endpoint for traction metrics.
+    Protected by x-admin-debug-key header.
+    Read-only, non-destructive.
+    
+    Modes:
+    - Default: JSON
+    - ?view=table: Table format
+    - ?format=csv: CSV download
+    """
+    # Security check
+    provided_key = request.headers.get("x-admin-debug-key", "")
+    if not ADMIN_DEBUG_KEY or provided_key != ADMIN_DEBUG_KEY:
+        raise HTTPException(status_code=403, detail="Forbidden: Invalid or missing admin key")
+    
+    try:
+        # Parallel queries for efficiency
+        counts_task = asyncio.gather(
+            db.users.count_documents({}),
+            db.projects.count_documents({}),
+            db.conversations.count_documents({}),
+            db.messages.count_documents({}),
+            db.leads.count_documents({}),
+            db.messages.count_documents({"role": "user"}),
+            db.messages.count_documents({"role": "assistant"})
+        )
+        
+        recent_users_task = db.users.find(
+            {},
+            {"_id": 0, "name": 1, "email": 1, "created_at": 1}
+        ).sort("created_at", -1).limit(50).to_list(50)
+        
+        recent_agents_task = db.projects.find(
+            {},
+            {"_id": 0, "name": 1, "user_id": 1, "created_at": 1}
+        ).sort("created_at", -1).limit(50).to_list(50)
+        
+        # Grouped conversations per agent (only allowed aggregation)
+        conversations_per_agent_task = db.conversations.aggregate([
+            {"$group": {"_id": "$project_id", "count": {"$sum": 1}}},
+            {"$sort": {"count": -1}},
+            {"$limit": 10}
+        ]).to_list(10)
+        
+        # Await all
+        counts, recent_users, recent_agents, conv_per_agent_raw = await asyncio.gather(
+            counts_task, recent_users_task, recent_agents_task, conversations_per_agent_task
+        )
+        
+        total_users, total_agents, total_conversations, total_messages, total_leads, user_messages, assistant_messages = counts
+        
+        # Enrich conversations_per_agent with agent names
+        conversations_per_agent = []
+        for item in conv_per_agent_raw:
+            project = await db.projects.find_one(
+                {"project_id": item["_id"]},
+                {"_id": 0, "name": 1}
+            )
+            conversations_per_agent.append({
+                "agent_name": project.get("name", "Unknown") if project else "Unknown",
+                "conversation_count": item["count"]
+            })
+        
+        # Format users (safe fields only)
+        users_formatted = [
+            {
+                "name": u.get("name") or u.get("email", "N/A"),
+                "email": u.get("email", "N/A"),
+                "created_at": u.get("created_at", "N/A")
+            }
+            for u in recent_users
+        ]
+        
+        # Format agents
+        agents_formatted = [
+            {
+                "agent_name": a.get("name", "N/A"),
+                "owner": a.get("user_id", "N/A"),
+                "created_at": a.get("created_at", "N/A")
+            }
+            for a in recent_agents
+        ]
+        
+        # Build response
+        data = {
+            "metrics": {
+                "total_users": total_users,
+                "total_agents": total_agents,
+                "total_conversations": total_conversations,
+                "total_messages": total_messages,
+                "total_leads": total_leads,
+                "user_messages": user_messages,
+                "assistant_messages": assistant_messages
+            },
+            "recent_users": users_formatted,
+            "recent_agents": agents_formatted,
+            "conversations_per_agent": conversations_per_agent
+        }
+        
+        # CSV format
+        if format == "csv":
+            import io
+            output = io.StringIO()
+            
+            # Metrics section
+            output.write("METRICS\n")
+            output.write("Metric,Value\n")
+            for k, v in data["metrics"].items():
+                output.write(f"{k},{v}\n")
+            output.write("\n")
+            
+            # Recent Users
+            output.write("RECENT USERS\n")
+            output.write("Name,Email,Joined\n")
+            for u in data["recent_users"]:
+                output.write(f'"{u["name"]}","{u["email"]}","{u["created_at"]}"\n')
+            output.write("\n")
+            
+            # Recent Agents
+            output.write("RECENT AGENTS\n")
+            output.write("Agent Name,Owner,Created\n")
+            for a in data["recent_agents"]:
+                output.write(f'"{a["agent_name"]}","{a["owner"]}","{a["created_at"]}"\n')
+            output.write("\n")
+            
+            # Conversations per Agent
+            output.write("CONVERSATIONS PER AGENT\n")
+            output.write("Agent Name,Conversations\n")
+            for c in data["conversations_per_agent"]:
+                output.write(f'"{c["agent_name"]}",{c["conversation_count"]}\n')
+            
+            csv_content = output.getvalue()
+            return Response(
+                content=csv_content,
+                media_type="text/csv",
+                headers={"Content-Disposition": "attachment; filename=admin_stats.csv"}
+            )
+        
+        # Table view format
+        if view == "table":
+            return {
+                "metrics_table": [{"metric": k, "value": v} for k, v in data["metrics"].items()],
+                "users_table": [
+                    {"name": u["name"], "email": u["email"], "joined": str(u["created_at"])}
+                    for u in data["recent_users"]
+                ],
+                "agents_table": [
+                    {"agent_name": a["agent_name"], "owner": a["owner"], "created": str(a["created_at"])}
+                    for a in data["recent_agents"]
+                ],
+                "conversations_per_agent_table": [
+                    {"agent_name": c["agent_name"], "conversations": c["conversation_count"]}
+                    for c in data["conversations_per_agent"]
+                ]
+            }
+        
+        # Default JSON format
+        return data
+        
+    except Exception as e:
+        logger.error(f"Admin stats error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch admin stats")
+
+
 # ───────────────────────────────────────────────────────────────────────────────
 
 app.include_router(api_router)
