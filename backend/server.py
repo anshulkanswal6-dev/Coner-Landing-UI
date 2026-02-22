@@ -22,6 +22,12 @@ from datetime import datetime, timezone, timedelta
 from bs4 import BeautifulSoup
 from emergentintegrations.llm.chat import LlmChat, UserMessage
 
+# Import Phase 1 workers and services
+from workers.email_summary_worker import trigger_email_summary
+from workers.learning_extraction_worker import trigger_learning_extraction, search_learned_patterns
+from workers.insight_aggregator import aggregate_insights, trigger_insight_aggregation
+from services.copilot_service import FounderCopilotService
+
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
@@ -36,6 +42,9 @@ EMERGENT_PROXY_URL = "https://integrations.emergentagent.com/llm"
 embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
 logger_st = logging.getLogger("sentence_transformers")
 logger_st.setLevel(logging.WARNING)
+
+# Initialize Founder Copilot Service
+copilot_service = FounderCopilotService(db, EMERGENT_LLM_KEY)
 
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
