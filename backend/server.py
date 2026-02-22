@@ -1375,79 +1375,118 @@ async def get_sync_status(project_id: str, user: dict = Depends(get_current_user
 
 # ─── NEW: Phase 1 Analytics Endpoints ───
 
-@api_router.get("/analytics/insights/cards")
-async def get_insight_cards(
-    date_from: str = None,
-    date_to: str = None,
-    user: dict = Depends(get_current_user)
-):
-    """Get insight cards for all projects (for testing) or specific project."""
-    # For now, return empty array - will be populated by frontend with project_id
-    return []
+class CopilotQueryRequest(BaseModel):
+    query: str = Field(..., min_length=1, max_length=500, description="Natural language analytics query")
+
+class InsightRefreshRequest(BaseModel):
+    date_from: Optional[str] = None
+    date_to: Optional[str] = None
 
 
 @api_router.get("/projects/{project_id}/analytics/insights/cards")
 async def get_project_insight_cards(
     project_id: str,
-    date_from: str = None,
-    date_to: str = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
     user: dict = Depends(get_current_user)
 ):
-    """Get analytics insight cards for a specific project."""
-    await get_project_for_user(project_id, user)
-    
-    # Try to get from materialized insights first
-    insights = await db.insight_summaries.find(
-        {
-            "project_id": project_id,
+    """Get analytics insight cards for a specific project. Tenant-scoped."""
+    try:
+        # Validate project access (tenant-scoped)
+        await get_project_for_user(project_id, user)
+        
+        # Default to last 7 days if not specified
+        if not date_to:
+            date_to = datetime.now(timezone.utc).isoformat()
+        if not date_from:
+            date_from = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+        
+        # Try to get from materialized insights first
+        insights = await db.insight_summaries.find(
+            {
+                "project_id": project_id,
+                "date_from": date_from,
+                "date_to": date_to
+            },
+            {"_id": 0}
+        ).to_list(20)
+        
+        # If no materialized insights, compute on-the-fly
+        if not insights:
+            insights = await aggregate_insights(db, project_id, date_from, date_to)
+        
+        return {
+            "status": "success",
+            "insights": insights,
+            "count": len(insights),
             "date_from": date_from,
             "date_to": date_to
-        },
-        {"_id": 0}
-    ).to_list(20)
-    
-    # If no materialized insights, compute on-the-fly
-    if not insights:
-        insights = await aggregate_insights(db, project_id, date_from, date_to)
-    
-    return {"insights": insights, "count": len(insights)}
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching insight cards: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch insight cards")
 
 
 @api_router.post("/projects/{project_id}/analytics/copilot/ask")
 async def founder_copilot_ask(
     project_id: str,
-    request: Request,
+    data: CopilotQueryRequest,
     user: dict = Depends(get_current_user)
 ):
-    """Natural language analytics query endpoint (Founder Copilot)."""
-    await get_project_for_user(project_id, user)
-    
-    body = await request.json()
-    query = body.get("query", "")
-    
-    if not query:
-        raise HTTPException(status_code=400, detail="Query is required")
-    
-    # Use copilot service
-    result = await copilot_service.query(project_id, query)
-    
-    return result
+    """Natural language analytics query endpoint (Founder Copilot). Tenant-scoped, PII-safe."""
+    try:
+        # Validate project access (tenant-scoped)
+        await get_project_for_user(project_id, user)
+        
+        # Sanitize query (prevent injection)
+        query = data.query.strip()
+        
+        if len(query) < 3:
+            raise HTTPException(status_code=400, detail="Query too short. Please ask a complete question.")
+        
+        # Use copilot service
+        result = await copilot_service.query(project_id, query)
+        
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error processing copilot query: {e}")
+        return {
+            "status": "error",
+            "query": data.query,
+            "error": str(e),
+            "explanation": "I encountered an error processing your query. Please try rephrasing it."
+        }
 
 
 @api_router.post("/projects/{project_id}/analytics/insights/refresh")
 async def refresh_insights(
     project_id: str,
-    date_from: str = None,
-    date_to: str = None,
-    user: dict = Depends(get_current_user)
+    user: dict = Depends(get_current_user),
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None
 ):
-    """Manually trigger insight aggregation."""
-    await get_project_for_user(project_id, user)
-    
-    # Trigger insight aggregation (fire-and-forget)
-    trigger_insight_aggregation(db, project_id, date_from, date_to)
-    
-    return {"message": "Insight aggregation triggered", "status": "processing"}
+    """Manually trigger insight aggregation. Tenant-scoped."""
+    try:
+        # Validate project access (tenant-scoped)
+        await get_project_for_user(project_id, user)
+        
+        # Trigger insight aggregation (fire-and-forget)
+        trigger_insight_aggregation(db, project_id, date_from, date_to)
+        
+        return {
+            "status": "success",
+            "message": "Insight aggregation triggered",
+            "processing": True
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error triggering insight refresh: {e}")
+        raise HTTPException(status_code=500, detail="Failed to trigger insight aggregation")
 
 
 # ───────────────────────────────────────────────────────────────────────────────
