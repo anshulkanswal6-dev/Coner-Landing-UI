@@ -1478,6 +1478,13 @@ async def startup():
     await db.messages.create_index("project_id")
     await db.leads.create_index("project_id")
     await db.corrections.create_index("project_id")
+    
+    # NEW: Phase 1 - Indexes for new collections
+    await db.learned_patterns.create_index("project_id")
+    await db.learned_patterns.create_index("message_id")
+    await db.insight_summaries.create_index("project_id")
+    await db.insight_summaries.create_index([("project_id", 1), ("metric_type", 1)])
+    
     logger.info("EmergentPulse AI backend started")
 
 @app.on_event("shutdown")
