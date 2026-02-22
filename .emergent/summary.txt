@@ -1,195 +1,190 @@
 <analysis>**original_problem_statement:**
-The user wants to build a production-ready, multi-tenant AI SaaS platform called EmergentPulse AI.
+The user's core objective is to build a production-ready, multi-tenant AI SaaS platform, EmergentPulse AI. The platform enables users to create AI agents, manage knowledge, and capture leads via an embeddable widget.
 
-**PRODUCT REQUIREMENTS:**
-- **Core Goal:** A no-code platform for business users to create AI agents, inject knowledge, configure behavior, test, deploy via an embed script, capture leads, and view conversation intelligence.
-- **Architecture:** Multi-tenant SaaS with isolated data per project (knowledge, conversations, leads, analytics).
-- **AI Stack:** A RAG pipeline (ingestion, chunking, embeddings, vector storage, retrieval, prompt orchestration), conversation memory, and golden rules injection.
-- **Agent System:** Modular agents for Chat, Lead Extraction, Analytics, and Feedback Learning.
-- **Database:** Production-ready schemas for users, projects, knowledge, conversations, leads, etc., with tenant isolation and indexing.
-- **API:** Secure, project-scoped, rate-limited APIs for all features. The  endpoint is critical and must have minimal latency.
-- **Embeddable Widget:** A standalone JS embed script and a React component version. The widget should have a floating launcher, persistent session, theme support, real-time chat, and voice mode.
-- **Voice Mode:** Speech-to-text -> Chat API -> Text-to-speech flow with streaming responses.
-- **Frontend:** A full UI for a landing page, auth, project creation, knowledge management, bot testing, analytics dashboard, and lead panel.
-- **User's Explicit Choices:**
-    - **LLM Provider:** GPT-4o-mini via the Emergent universal LLM key.
-    - **Embeddings:**  via the Emergent universal key (later switched to local ).
-    - **Authentication:** Emergent-managed Google social login.
-    - **UI/Design:** Dark theme dashboard, light theme widget, primary color , Font: Inter, modern and minimal style.
+Recent tasks have focused on enhancing the user experience and core functionality, including:
+- A Premium Voice Experience upgrade for the chat widget.
+- Implementing a robust RAG pipeline with multi-format document uploads and website sync capabilities.
+- Transforming the leads management section into a full-fledged CRM-style dashboard.
+- Adding configurable chat memory (session vs. persistent).
+- Fixing critical bugs related to voice interruption and UI component initialization.
 
 **User's preferred language**: English
 
 **what currently exists?**
-A full-stack multi-tenant SaaS application, EmergentPulse AI, with a FastAPI backend and a React frontend. The application supports project creation, a RAG pipeline with local , and a user dashboard. The core feature is an embeddable chat widget with SSE streaming and a Voice Island UI.
-
-In the last session, the user pivoted from fixing bugs to requesting a full codebase audit. The agent performed the audit, documented its findings, and then received a new request to generate a detailed technical report on the voice mode and widget UI implementation. The agent has started analyzing the code for this report but has not yet generated the final document.
+A full-stack application with a FastAPI backend and a React frontend. The application features a multi-tenant project structure, an embeddable chat widget with an advanced voice mode, and a user dashboard. The dashboard now includes a sophisticated Knowledge tab for RAG source management (document uploads, website sync) and a Leads tab redesigned into a CRM-style table with filtering, a detailed modal view, and CSV export functionality. Chat memory can be configured to be session-based or persistent.
 
 **Last working item**:
-    - Last item agent was working on: Generating a detailed technical report explaining the implementation of the voice mode and widget UI, as per a very specific user request. The agent has analyzed the key files (, ) and was about to write the report document.
-    - Status: IN PROGRESS
-    - Agent Testing Done: N/A
-    - Which testing method agent to use? N/A (This is a reporting task, not a code change).
-    - User Testing Done: N/A
+- Last item agent was working: The user requested UI improvements for the new CRM-style Leads dashboard. The agent implemented two changes in :
+    1.  Added a status dropdown directly within each lead's row in the table for quick updates.
+    2.  Improved the UI layout and styling of the View Ticket modal for better readability.
+- Status: USER VERIFICATION PENDING
+- Agent Testing Done: N
+- Which testing method agent to use? screenshot tool (To visually confirm the new dropdown and improved modal UI in the Leads tab).
+- User Testing Done: N
 
 **All Pending/In progress Issue list**:
-  - Issue 1:  (P1) Complete the verification of the 5 voice mode fixes.
-  - Issue 2:  (P2) Address security vulnerability with whitelisted domains.
-  - Issue 3:  (P3) Address architectural and code quality issues from the audit.
-  
-  Issues Detail:
-  - Issue 1: 
-     - Attempted fixes: The agent previously ran a frontend test that found a bug in the first of five voice mode fixes (auto-restart in sandbox). The agent patched this specific bug in . However, the full test suite was not re-run to verify the patch or the other four original fixes.
-     - Next debug checklist: 
-       - Re-run the frontend testing agent.
-       - The test plan must verify all 5 original points:
-         1. **Preview-Safe Mode:** Confirm the fix preventing auto-restart works.
-         2. **Unified History:** Messages from voice mode appear in the main chat history.
-         3. **Interruptible Speech:** Speaking while the AI is talking stops the AI's speech.
-         4. **Duplicate Prevention:** Duplicate user messages are prevented.
-         5. **Launcher State:** Launcher button style reverts correctly after voice mode.
-     - Why fix this issue and what will be achieved with the fix? To ensure the voice mode feature is stable, user-friendly, and fully meets the user's requirements before moving on.
-     - Status:  IN PROGRESS
+- Issue 1: (P0) Verify the UI changes on the Leads page. The new in-line status dropdown and the refined View Ticket modal need to be visually checked to confirm they work as intended.
+- Issue 2: (P1) The  component was repeatedly crashing due to s related to React hook initialization order. The agent performed a significant refactoring of the component to fix this. The component's core functionalities (voice mode, memory switching, chat) need to be thoroughly tested to ensure no regressions were introduced.
+- Issue 3: (P2) The new knowledge ingestion features (multi-format document upload, website sync) have been implemented on both the frontend and backend but have not been tested end-to-end.
+- Issue 4: (P3) Critical security vulnerability in . The  endpoint does not validate the request origin against the project's , allowing the widget to be embedded on unauthorized websites.
+
+Issues Detail:
+  - Issue 1: Verify UI changes on the Leads page
+     - Attempted fixes: The agent has already implemented the code changes in .
+     - Next debug checklist: Use the screenshot tool to view the  page and navigate to the Leads tab. Confirm the status dropdown is present and the View modal is well-formatted.
+     - Why fix this issue and what will be achieved with the fix? To confirm the user's latest request is completed successfully.
+     - Status:  USER VERIFICATION PENDING
      - Is recurring issue? N
      - Should Test frontend/backend/both after fix? Frontend
      - Blocked on other issue: No
 
-  - Issue 2: 
-     - Attempted fixes: None. This was identified during the codebase audit.
+  - Issue 2: Potential regressions in 
+     - Attempted fixes: The agent refactored the component by reordering state, helper functions, and  hooks to resolve initialization errors.
+     - Next debug checklist: Use the frontend testing agent to specifically test the Test Bot (Sandbox) tab. The test should cover sending messages, switching between memory modes, and activating/using the voice mode.
+     - Why fix this issue and what will be achieved with the fix? To ensure the critical Test Bot feature is stable after major refactoring.
+     - Status:  TESTING PENDING
+     - Is recurring issue? Y (The crash was a recurring problem during the session).
+     - Should Test frontend/backend/both after fix? Frontend
+     - Blocked on other issue: No
+
+  - Issue 3: End-to-end testing for Knowledge Ingestion
+     - Attempted fixes: Implementation is complete.
+     - Next debug checklist: Use the frontend testing agent to navigate to the Knowledge tab, upload a document (e.g., .txt or .pdf), wait for it to be processed, and then ask the bot a question related to the document's content to verify the RAG pipeline is working.
+     - Why fix this issue and what will be achieved with the fix? To validate that one of the core new features is fully functional.
+     - Status:  TESTING PENDING
+     - Is recurring issue? N
+     - Should Test frontend/backend/both after fix? Both
+     - Blocked on other issue: No
+
+  - Issue 4: Security Vulnerability with Whitelisted Domains
+     - Attempted fixes: None. This was identified in a previous audit and has not been addressed.
      - Next debug checklist:
        - **File:** 
        - **Function:** 
-       - **Problem:** The endpoint does not validate the  or  header against the project's  field. This allows the widget to be used from any website, ignoring the user's configuration.
-       - **Fix:** Add logic at the beginning of the  endpoint to check the request's origin and raise a  error if it doesn't match the whitelisted domains for the given .
-     - Why fix this issue and what will be achieved with the fix? This is a critical security fix to ensure the multi-tenant promise of the application is upheld and users have control over where their AI agents can be embedded.
+       - **Fix:** Add logic to check the request's  or  header against the project's  from the database. If there's no match, return a  error.
+     - Why fix this issue and what will be achieved with the fix? This is a critical security fix to ensure tenant data isolation and control over widget embedding.
      - Status:  NOT STARTED
      - Is recurring issue? N
      - Should Test frontend/backend/both after fix? Backend
      - Blocked on other issue: No
 
-  - Issue 3: 
-     - Attempted fixes: None. Identified during the audit.
-     - Next debug checklist: This is a group of related refactoring tasks.
-       - Consolidate duplicated voice logic between  and .
-       - Refactor the monolithic  into a modular structure (e.g., , , ).
-       - Remove hardcoded values and move them to configuration files or environment variables.
-       - Clean up unused files from the  root directory.
-     - Why fix this issue and what will be achieved with the fix? To improve code maintainability, reduce redundancy, and make the application more scalable and easier to debug.
-     - Status:  NOT STARTED
-     - Is recurring issue? N
-     - Should Test frontend/backend/both after fix? Both
-     - Blocked on other issue: No
-
 **In progress Task List**:
-  - Task 1:  (P0) Generate Voice Mode & Widget UI Implementation Report.
- 
- Task Detail:
-  - Task 1: 
-     - Where to resume: The agent has analyzed  and . The next step is to use the  tool to write the findings into , following the structured format requested by the user.
-     - What will be achieved with this? It will satisfy the user's explicit request for a detailed technical document explaining the current implementation of the voice feature.
-     - Status:  IN PROGRESS
-     - Should Test frontend/backend/both after fix? N/A
-     - Blocked on something: No
+  - None.
 
 **Upcoming and Future Tasks**
     Upcoming Tasks:
-    - **Create Backend Tests (P2):** Write unit and integration tests for the FastAPI backend to ensure API stability and prevent regressions.
-    - **Add API Documentation (P3):** Implement OpenAPI/Swagger documentation for the backend API to improve developer experience and clarity.
+    - (P2) Create backend tests for the new knowledge and leads API endpoints to prevent future regressions.
+    - (P3) Refactor the monolithic  into a modular structure (e.g., routes, services, models).
+    - (P3) Address duplicated voice logic between  and .
 
     Future Tasks:
-    - There are no other specified future tasks.
+    - Add OpenAPI/Swagger documentation for the backend API.
 
 **Completed work in this session**
-- **Codebase Audit:** Performed a comprehensive review of the entire codebase and documented findings in . Identified key issues related to security, code duplication, and maintainability.
-- **Voice Mode Bug Fix:** Identified and fixed a bug where the voice recognition would auto-restart in the sandbox preview. The fix was applied to .
-- **Initiated Technical Report:** Started the analysis for a detailed technical report on the voice UI, as requested by the user.
+- **CRM-Style Leads Dashboard:**
+  - Revamped  into a full-featured table with search, filtering, and an Export to CSV option.
+  - Implemented a View Ticket modal for detailed lead viewing and editing.
+  - Added an in-line status change dropdown in the leads table.
+  - Extended the  model and added update/export endpoints in .
+
+- **RAG & Knowledge Management:**
+  - Implemented a multi-format document upload pipeline (PDF, DOCX, TXT, etc.) in .
+  - Added website crawling, re-syncing, and navigation intelligence features.
+  - Built a new UI in  to manage document uploads and website sync.
+
+- **Chat Memory & UI:**
+  - Implemented session-based () and persistent () chat memory modes.
+  - Added a New Chat button to the widget and sandbox UI.
+
+- **Voice Experience Upgrade:**
+  - Upgraded voice mode with intelligent voice selection, sentence-chunked TTS, and real-time visualizations using the Web Audio API in .
+
+- **Critical Bug Fixes:**
+  - Resolved multiple  crashes in  by reordering hooks and function declarations.
+  - Fixed a voice interrupt bug where only the first word of the user's speech was being sent to the AI.
 
 **Earlier issues found/mentioned but not fixed**
-   - **Security Flaw:** The  endpoint doesn't enforce the  setting.
+   - **Architectural Debt:** The backend logic is centralized in a very large  file, making it difficult to maintain.
    - **Code Duplication:** Voice interaction logic is heavily duplicated between  and .
-   - **Monolithic Backend:** All backend logic resides in a single large  file.
-   - **Hardcoded Values:** Various configuration values (e.g., animation timings, API URLs) are hardcoded.
-   - **No Backend Tests:** The backend lacks any automated tests.
-   - **Unused Root Files:** Extraneous files like  and a stray  exist in the  root directory.
-
-**Known issue recurrence from previous fork**
-  - None.
+   - **Missing Tests:** The backend lacks an automated test suite.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- **Backend**: FastAPI, MongoDB (managed with Pydantic models), RAG, Server-Sent Events (SSE), JWT for session management.
-- **Frontend**: React, React Router, TailwindCSS, Shadcn/UI components, Browser Web Speech API (, ) for voice mode.
-- **Embeddings**: Local sentence embeddings using the  library.
-- **Architecture**: Multi-tenant SaaS, embeddable JS widget for third-party site integration.
+- **Backend**: FastAPI, MongoDB, Pydantic, Server-Sent Events (SSE), RAG with ,  for file uploads, various document parsing libraries (, ).
+- **Frontend**: React, Shadcn/UI, TailwindCSS, Web Audio API for voice visualization,  and  for chat memory.
 
 **key DB schema**
-Defined within Pydantic models in :
-- **User**: {email, name, picture}
-- **Project**: {name, owner_email, api_key, whitelisted_domains, created_at}
-- **KnowledgeSource**: {project_id, type, content, status, created_at}
-- **Conversation**: {project_id, session_id, created_at}
-- **Message**: {conversation_id, sender, text, created_at}
-- **Lead**: {project_id, conversation_id, name, email, phone, details, created_at}
+- **Lead (Extended)**: 
+- **Project (Extended)**: Now includes  to toggle between support and acquisition.
+- **KnowledgeSource**: Schema unchanged, but now populated with richer metadata from document uploads () and website crawls ().
 
 **changes in tech stack**
-- The agent pivoted from a non-functional proxy-based embedding approach to a working local embedding solution using the  library.
+- **New Backend Dependencies**: , , , , , , .
 
 **All files of reference**
-- : Analyzed for the technical report. Contains the complex voice mode implementation.
-- : Modified to fix the voice auto-restart bug and analyzed for the report.
-- : Reviewed during the codebase audit.
-- : New file created to document the codebase audit findings.
-- : New file created to house the requested technical report.
+- : Heavily modified to add all new backend logic for knowledge ingestion and the leads CRM.
+- : Completely rewritten to implement the CRM-style dashboard.
+- : Completely rewritten to support the new RAG features.
+- : Significantly refactored to fix critical runtime errors.
+- : Modified for the voice experience upgrade, new memory system, and interrupt bug fix.
+- : Modified to add the  toggle.
 
 **Areas that need refactoring**:
-- **Duplicated Voice Logic**: The complex voice mode logic in  and  should be extracted into a shared React hook or utility to improve maintainability.
-- **Monolithic Backend**:  has grown too large. It should be broken down into separate modules for routes, database models, and business logic services.
-- **Hardcoded Configuration**: Hardcoded values throughout the codebase should be moved to a centralized configuration or environment variables.
+- **/app/backend/server.py**: The file is now extremely large and handles routes, models, services, and utilities for all features. It urgently needs to be broken down into a modular structure.
+- **Voice Logic**: The complex voice processing logic remains duplicated in  and , making maintenance difficult. Consolidating this into a shared React hook is recommended.
 
 **key api endpoints**
-- : Get current user session.
-- : CRUD endpoints for projects.
-- : Add a new knowledge source.
-- : The streaming chat endpoint using Server-Sent Events (SSE).
-- : Serves the production  bundle.
+- **New Endpoints:**
+    -  (POST)
+    -  (GET)
+    -  (DELETE)
+    -  (POST)
+    -  (PUT)
+    -  (GET)
+- **Updated Endpoints:**
+    -  (PUT): Now handles  updates.
 
 **Critical Info for New Agent**
-- **Your immediate task is to complete the technical report requested by the user.** The analysis is done; you just need to format and write the output to .
-- After completing the report, you should propose a new plan to the user. This plan should prioritize:
-    1.  Re-running the frontend tests to fully verify the 5 voice mode fixes (P1 Issue).
-    2.  Addressing the critical security vulnerability in the  enforcement (P2 Issue).
-    3.  Tackling the architectural debt identified in the audit (P3 Issue).
-- The user has shown a tendency to shift priorities from implementation to analysis. Be prepared to explain the value of fixing the identified issues.
+- **Prioritize Testing:** The last session involved rapid feature development with minimal testing. Your first priority should be to stabilize the application by testing the most recent and riskiest changes: the  tab UI, the refactored , and the new  tab functionality.
+- **Address Technical Debt:** The monolithic backend () and duplicated frontend logic are becoming significant liabilities. Plan to address these after stabilizing the current feature set.
+- **Security First:** The whitelisted domains vulnerability is a critical security flaw in a multi-tenant app and should be fixed with high priority.
 
 **documents and test reports created in this job**
-- 
-- 
+- No new official documents or reports were created in this session.
 
 **Last 10 User Messages and any pending HUMAN messages** 
- - **User Message (latest):** Explicitly requested a detailed technical report on the voice and widget UI implementation, providing a structured list of 8 sections to cover. **This is the current, in-progress task.**
- - **User Message:** Asked the agent to perform a comprehensive audit of the entire codebase to identify all existing problems. (Completed)
- - **User Message:** Confirmed the agent should proceed with its plan to tackle the next task.
- - **User Message:** Confirmed the agent should proceed with testing the 5 voice mode fixes. (Partially addressed, then superseded by audit request).
+ - **Latest:** On the leads page give a drop down in each lead to change the status of the leads. And also fix the UI of the page that opens after clicking on the view button. (Status: Implemented, verification pending)
+ - Request to implement a full CRM-style leads dashboard. (Status: Completed)
+ - Request to fix a bug where interrupting AI speech only sent the first word. (Status: Completed)
+ - User reported the app was crashing when clicking test bot. (Status: Believed to be fixed via refactoring, testing pending)
+ - Request to implement multi-format document ingestion for the RAG pipeline. (Status: Completed, testing pending)
+ - Request for session-based chat memory and a New Chat button. (Status: Completed)
+ - Request to add a UI toggle to enable Acquisition Mode for lead capture. (Status: Completed)
+ - User asked why they couldn't test the leads feature. (Status: Answered and resolved)
+ - User asked how to test the leads feature. (Status: Answered)
 
 **Project Health Check:**
-- **Broken**: The voice mode functionality remains unverified after a partial bug fix. Its stability is unknown.
-- **Vulnerable**: The codebase audit revealed a security flaw where  are not enforced, allowing unauthorized embedding of the widget.
-- **Mocked**: No mocked components or data.
+- **Broken**: The stability of the Test Bot feature () is unknown after extensive refactoring to fix crashes.
+- **Vulnerable**: The  security flaw remains unpatched.
+- **Mocked**: No mocked components.
 
 **3rd Party Integrations**
 - **OpenAI GPT-4o-mini**: Used for chat generation via the Emergent LLM Key.
-- **Emergent-managed Google Auth**: Handles user authentication and login.
-- **Browser Web Speech API**: Native browser technology used for  (speech-to-text) and  (text-to-speech) in voice mode.
+- **Emergent-managed Google Auth**: Handles user authentication.
+- **Browser Web Speech API**: Native browser API for speech-to-text and text-to-speech.
 
 **Testing status**
-  - Testing agent used after significant changes: YES, which led to finding a bug. However, it was not re-run after the fix was applied.
-  - Troubleshoot agent used after agent stuck in loop: NO
+  - Testing agent used after significant changes: NO. Major features like knowledge ingestion and the leads CRM were implemented without using the testing agent.
+  - Troubleshoot agent used after agent stuck in loop: NO. The agent self-resolved a recurring crash issue after several attempts.
   - Test files created: None.
-  - Known regressions: The voice mode has been fragile during development. Its current state is not fully verified.
+  - Known regressions: High risk of regressions in the Test Bot (Sandbox) functionality due to the recent refactoring.
 
 **Credentials to test flow:**
-Authentication is handled by Emergent-managed Google Auth. The testing agent manages this flow. No explicit credentials are required.
+Authentication is handled by Emergent-managed Google Auth. The testing agent can manage this flow automatically.
 
 **What agent forgot to execute**
-The agent did not complete the full verification of the 5 voice mode fixes. After fixing one bug found by the testing agent, it did not re-run the tests to confirm the fix and check the other four items. This verification task remains pending.</analysis>
+- **Testing:** The agent consistently skipped end-to-end testing for major features (Knowledge RAG, Leads CRM) and critical bug-fix refactoring ().
+- **Security:** The critical  vulnerability identified early on was never prioritized or fixed.
+- **Architectural Refactoring:** Despite the growing complexity, the agent continued to add features to the monolithic  file and did not address the duplicated voice logic.</analysis>
