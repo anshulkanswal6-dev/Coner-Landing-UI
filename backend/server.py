@@ -1371,6 +1371,87 @@ async def get_sync_status(project_id: str, user: dict = Depends(get_current_user
     )
     
     return last_sync if last_sync else {"status": "never_synced"}
+
+
+# ─── NEW: Phase 1 Analytics Endpoints ───
+
+@api_router.get("/analytics/insights/cards")
+async def get_insight_cards(
+    date_from: str = None,
+    date_to: str = None,
+    user: dict = Depends(get_current_user)
+):
+    """Get insight cards for all projects (for testing) or specific project."""
+    # For now, return empty array - will be populated by frontend with project_id
+    return []
+
+
+@api_router.get("/projects/{project_id}/analytics/insights/cards")
+async def get_project_insight_cards(
+    project_id: str,
+    date_from: str = None,
+    date_to: str = None,
+    user: dict = Depends(get_current_user)
+):
+    """Get analytics insight cards for a specific project."""
+    await get_project_for_user(project_id, user)
+    
+    # Try to get from materialized insights first
+    insights = await db.insight_summaries.find(
+        {
+            "project_id": project_id,
+            "date_from": date_from,
+            "date_to": date_to
+        },
+        {"_id": 0}
+    ).to_list(20)
+    
+    # If no materialized insights, compute on-the-fly
+    if not insights:
+        insights = await aggregate_insights(db, project_id, date_from, date_to)
+    
+    return {"insights": insights, "count": len(insights)}
+
+
+@api_router.post("/projects/{project_id}/analytics/copilot/ask")
+async def founder_copilot_ask(
+    project_id: str,
+    request: Request,
+    user: dict = Depends(get_current_user)
+):
+    """Natural language analytics query endpoint (Founder Copilot)."""
+    await get_project_for_user(project_id, user)
+    
+    body = await request.json()
+    query = body.get("query", "")
+    
+    if not query:
+        raise HTTPException(status_code=400, detail="Query is required")
+    
+    # Use copilot service
+    result = await copilot_service.query(project_id, query)
+    
+    return result
+
+
+@api_router.post("/projects/{project_id}/analytics/insights/refresh")
+async def refresh_insights(
+    project_id: str,
+    date_from: str = None,
+    date_to: str = None,
+    user: dict = Depends(get_current_user)
+):
+    """Manually trigger insight aggregation."""
+    await get_project_for_user(project_id, user)
+    
+    # Trigger insight aggregation (fire-and-forget)
+    trigger_insight_aggregation(db, project_id, date_from, date_to)
+    
+    return {"message": "Insight aggregation triggered", "status": "processing"}
+
+
+# ───────────────────────────────────────────────────────────────────────────────
+
 app.include_router(api_router)
 
 app.add_middleware(
