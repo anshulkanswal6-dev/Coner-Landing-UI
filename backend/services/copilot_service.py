@@ -1,4 +1,4 @@
-"""Founder Copilot Service - Natural language analytics queries."""
+"""Founder Copilot Service - Intelligent conversation analysis and insights."""
 import logging
 from datetime import datetime, timezone, timedelta
 from typing import Dict, List, Any
@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class FounderCopilotService:
-    """Service to handle natural language analytics queries."""
+    """Service to handle natural language analytics queries with actual conversation analysis."""
     
     def __init__(self, db, emergent_llm_key: str):
         self.db = db
@@ -17,30 +17,35 @@ class FounderCopilotService:
     
     async def query(self, project_id: str, natural_query: str) -> Dict[str, Any]:
         """
-        Process natural language query and return structured analytics data.
+        Process natural language query by analyzing actual conversation content.
         
         Args:
             project_id: Project ID
             natural_query: User's natural language question
         
         Returns:
-            Structured response with data and explanation
+            Conversational insights from actual customer conversations
         """
         try:
-            # Step 1: Convert NL query to structured query intent
-            intent = await self._parse_query_intent(natural_query)
+            # Fetch recent conversation data
+            conversation_data = await self._fetch_conversation_data(project_id)
             
-            # Step 2: Fetch relevant data based on intent
-            data = await self._fetch_analytics_data(project_id, intent)
+            if not conversation_data["user_messages"] or len(conversation_data["user_messages"]) == 0:
+                return {
+                    "status": "success",
+                    "query": natural_query,
+                    "explanation": "I don't have enough conversation data yet to analyze. Once you have some customer interactions, I'll be able to provide insights about what they're asking, trending topics, pricing questions, pain points, and more!",
+                    "data": {"total_conversations": 0}
+                }
             
-            # Step 3: Generate human-readable explanation
-            explanation = await self._generate_explanation(natural_query, data)
+            # Use LLM to intelligently analyze conversations and answer the query
+            answer = await self._analyze_with_llm(natural_query, conversation_data)
             
             return {
                 "status": "success",
                 "query": natural_query,
-                "data": data,
-                "explanation": explanation,
+                "explanation": answer["explanation"],
+                "data": answer.get("data", {}),
                 "timestamp": datetime.now(timezone.utc).isoformat()
             }
             
@@ -50,186 +55,222 @@ class FounderCopilotService:
                 "status": "error",
                 "query": natural_query,
                 "error": str(e),
-                "explanation": "I encountered an error processing your query. Please try rephrasing it."
+                "explanation": "I encountered an error analyzing your data. Please try rephrasing your question."
             }
     
-    async def _parse_query_intent(self, query: str) -> Dict[str, Any]:
+    async def _fetch_conversation_data(self, project_id: str) -> Dict[str, Any]:
         """
-        Use LLM to parse query intent and extract parameters.
+        Fetch comprehensive conversation data for intelligent analysis.
+        Returns actual message content, leads, feedback, and stats.
         """
-        system_prompt = """You are a query intent parser. Given a natural language analytics question, extract:
-1. query_type: one of [trends, comparison, count, rate, top_items, time_range]
-2. metric: what they're asking about (conversations, leads, satisfaction, etc.)
-3. time_range: recent/last_week/last_month/all_time
-4. filters: any specific filters mentioned
-
-Respond ONLY with valid JSON.
-
-Examples:
-"How many leads did we get this week?" → {"query_type": "count", "metric": "leads", "time_range": "last_week"}
-"What's the satisfaction trend?" → {"query_type": "trends", "metric": "satisfaction", "time_range": "recent"}
-"Show me top pain points" → {"query_type": "top_items", "metric": "pain_points", "time_range": "recent"}"""
+        # Get last 30 days
+        now = datetime.now(timezone.utc)
+        thirty_days_ago = (now - timedelta(days=30)).isoformat()
+        seven_days_ago = (now - timedelta(days=7)).isoformat()
         
-        try:
-            chat = LlmChat(
-                api_key=self.llm_key,
-                session_id=f"copilot_intent"
-            ).with_model("openai", "gpt-4o-mini")
-            
-            response = await chat.send_message(UserMessage(
-                text=f"Parse this query: {query}"
-            ))
-            
-            # Extract JSON from response
-            import re
-            json_match = re.search(r'\{[^}]+\}', response)
-            if json_match:
-                intent = json.loads(json_match.group())
-            else:
-                # Fallback intent
-                intent = {"query_type": "count", "metric": "conversations", "time_range": "recent"}
-            
-            return intent
-            
-        except Exception as e:
-            logger.error(f"Intent parsing error: {e}")
-            return {"query_type": "count", "metric": "conversations", "time_range": "recent"}
-    
-    async def _fetch_analytics_data(self, project_id: str, intent: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Fetch actual analytics data based on parsed intent.
-        IMPORTANT: Only returns aggregated/structured data, NO PII.
-        """
-        query_type = intent.get("query_type")
-        metric = intent.get("metric")
-        time_range = intent.get("time_range", "recent")
-        
-        # Calculate date range
-        date_filter = self._get_date_filter(time_range)
-        
-        data = {}
-        
-        # Handle different query types
-        if query_type == "count":
-            if metric == "leads":
-                count = await self.db.leads.count_documents({
-                    "project_id": project_id,
-                    **date_filter
-                })
-                data["count"] = count
-                data["metric"] = "leads"
-            
-            elif metric == "conversations":
-                count = await self.db.conversations.count_documents({
-                    "project_id": project_id,
-                    **date_filter
-                })
-                data["count"] = count
-                data["metric"] = "conversations"
-            
-            elif metric == "messages":
-                count = await self.db.messages.count_documents({
-                    "project_id": project_id,
-                    **date_filter
-                })
-                data["count"] = count
-                data["metric"] = "messages"
-        
-        elif query_type in ["rate", "trends"] and metric == "satisfaction":
-            # Calculate satisfaction rate
-            positive = await self.db.messages.count_documents({
+        # Fetch customer messages (what they're actually asking)
+        user_messages = await self.db.messages.find(
+            {
                 "project_id": project_id,
+                "role": "user",
+                "created_at": {"$gte": thirty_days_ago}
+            },
+            {
+                "_id": 0,
+                "content": 1,
+                "created_at": 1,
                 "feedback": 1,
-                **date_filter
-            })
-            negative = await self.db.messages.count_documents({
+                "session_id": 1
+            }
+        ).sort("created_at", -1).limit(150).to_list(150)
+        
+        # Fetch recent messages for recency analysis
+        recent_messages = await self.db.messages.find(
+            {
+                "project_id": project_id,
+                "role": "user",
+                "created_at": {"$gte": seven_days_ago}
+            },
+            {"_id": 0, "content": 1, "created_at": 1}
+        ).limit(50).to_list(50)
+        
+        # Fetch lead requirements to understand demand
+        leads = await self.db.leads.find(
+            {"project_id": project_id, "created_at": {"$gte": thirty_days_ago}},
+            {"_id": 0, "requirements": 1, "status": 1, "created_at": 1}
+        ).to_list(50)
+        
+        # Fetch messages with negative feedback (pain points)
+        negative_messages = await self.db.messages.find(
+            {
                 "project_id": project_id,
                 "feedback": -1,
-                **date_filter
-            })
-            total = positive + negative
-            rate = round((positive / total * 100), 1) if total > 0 else 0
-            
-            data["satisfaction_rate"] = rate
-            data["positive_count"] = positive
-            data["negative_count"] = negative
-            data["total_feedback"] = total
+                "created_at": {"$gte": thirty_days_ago}
+            },
+            {"_id": 0, "content": 1, "session_id": 1}
+        ).limit(30).to_list(30)
         
-        elif query_type == "top_items":
-            if metric in ["pain_points", "issues", "problems"]:
-                # Aggregate common keywords from user messages
-                messages = await self.db.messages.find(
+        # Get corresponding user messages for negative feedback
+        negative_user_msgs = []
+        if negative_messages:
+            session_ids = list(set([m["session_id"] for m in negative_messages if "session_id" in m]))
+            if session_ids:
+                negative_user_msgs = await self.db.messages.find(
                     {
                         "project_id": project_id,
                         "role": "user",
-                        **date_filter
+                        "session_id": {"$in": session_ids}
                     },
                     {"_id": 0, "content": 1}
-                ).limit(200).to_list(200)
-                
-                # Simple keyword extraction
-                pain_keywords = ["problem", "issue", "difficult", "trouble", "error", "broken", "slow"]
-                keyword_counts = {kw: 0 for kw in pain_keywords}
-                
-                for msg in messages:
-                    content = msg.get("content", "").lower()
-                    for kw in pain_keywords:
-                        if kw in content:
-                            keyword_counts[kw] += 1
-                
-                top_items = sorted(keyword_counts.items(), key=lambda x: x[1], reverse=True)[:5]
-                data["top_pain_points"] = [{"keyword": k, "count": v} for k, v in top_items if v > 0]
+                ).limit(30).to_list(30)
         
-        elif query_type == "comparison":
-            # Lead status breakdown
-            pipeline = [
-                {"$match": {"project_id": project_id, **date_filter}},
-                {"$group": {"_id": "$status", "count": {"$sum": 1}}}
-            ]
-            lead_stats = await self.db.leads.aggregate(pipeline).to_list(20)
-            data["lead_breakdown"] = {stat["_id"]: stat["count"] for stat in lead_stats}
+        # Basic stats
+        total_conversations = await self.db.conversations.count_documents(
+            {"project_id": project_id, "started_at": {"$gte": thirty_days_ago}}
+        )
         
-        data["time_range"] = time_range
-        return data
+        recent_conversations = await self.db.conversations.count_documents(
+            {"project_id": project_id, "started_at": {"$gte": seven_days_ago}}
+        )
+        
+        positive_feedback = await self.db.messages.count_documents(
+            {"project_id": project_id, "feedback": 1, "created_at": {"$gte": thirty_days_ago}}
+        )
+        
+        negative_feedback = await self.db.messages.count_documents(
+            {"project_id": project_id, "feedback": -1, "created_at": {"$gte": thirty_days_ago}}
+        )
+        
+        return {
+            "user_messages": user_messages,
+            "recent_messages": recent_messages,
+            "negative_user_msgs": negative_user_msgs,
+            "leads": leads,
+            "total_conversations": total_conversations,
+            "recent_conversations": recent_conversations,
+            "positive_feedback": positive_feedback,
+            "negative_feedback": negative_feedback,
+            "thirty_day_count": len(user_messages),
+            "seven_day_count": len(recent_messages)
+        }
     
-    def _get_date_filter(self, time_range: str) -> Dict[str, Any]:
-        """Convert time_range string to MongoDB date filter."""
-        now = datetime.now(timezone.utc)
-        
-        if time_range == "last_week":
-            start_date = (now - timedelta(days=7)).isoformat()
-            return {"created_at": {"$gte": start_date}}
-        elif time_range == "last_month":
-            start_date = (now - timedelta(days=30)).isoformat()
-            return {"created_at": {"$gte": start_date}}
-        elif time_range == "recent":
-            start_date = (now - timedelta(days=7)).isoformat()
-            return {"created_at": {"$gte": start_date}}
-        else:
-            return {}  # all_time
-    
-    async def _generate_explanation(self, query: str, data: Dict[str, Any]) -> str:
+    async def _analyze_with_llm(self, query: str, data: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Generate human-readable explanation of the data.
+        Use LLM to intelligently analyze actual conversation content and provide founder insights.
         """
-        system_prompt = """You are a helpful analytics assistant. Given a user's question and the data fetched, provide a clear, concise explanation in natural language. Focus on insights and trends. Keep it under 3 sentences."""
+        # Build context from actual customer messages
+        all_messages = "\n".join([
+            f"[{msg.get('created_at', '')[:10]}] Customer: {msg['content'][:150]}" 
+            for msg in data["user_messages"][:80]  # Sample to fit in context
+        ])
         
+        # Recent messages for trend analysis
+        recent_context = "\n".join([
+            f"Customer: {msg['content'][:100]}" 
+            for msg in data["recent_messages"][:30]
+        ])
+        
+        # Messages that got negative feedback (pain points)
+        pain_context = "\n".join([
+            f"Customer (got negative feedback): {msg['content'][:100]}" 
+            for msg in data["negative_user_msgs"][:20]
+        ]) if data["negative_user_msgs"] else "No negative feedback yet."
+        
+        # Lead requirements
+        lead_context = "\n".join([
+            f"- {lead.get('requirements', 'N/A')[:100]}" 
+            for lead in data["leads"][:15] if lead.get("requirements")
+        ]) if data["leads"] else "No leads captured yet."
+        
+        # Build comprehensive analysis prompt
+        analysis_prompt = f"""You are Corner AI, an intelligent analytics assistant helping a business founder understand their customer conversations in depth.
+
+**Context (Last 30 Days)**:
+- Total Conversations: {data['total_conversations']}
+- Customer Messages Analyzed: {data['thirty_day_count']}
+- Recent (Last 7 Days): {data['seven_day_count']} messages in {data['recent_conversations']} conversations
+- Leads Captured: {len(data['leads'])}
+- Customer Satisfaction: {data['positive_feedback']} positive, {data['negative_feedback']} negative feedback
+
+**All Customer Messages (Last 30 Days)**:
+{all_messages[:4000]}
+
+**Recent Messages (Last 7 Days)**:
+{recent_context[:1500]}
+
+**Messages That Got Negative Feedback (Pain Points)**:
+{pain_context[:1500]}
+
+**Lead Requirements**:
+{lead_context[:1500]}
+
+---
+
+**Founder's Question**: "{query}"
+
+**Your Task**:
+Analyze the ACTUAL customer messages above and provide a conversational, insightful answer. You're talking to the founder as their intelligent assistant who has read all their customer conversations.
+
+**Guidelines**:
+1. Reference SPECIFIC customer language and patterns you see
+2. If asked about trends, compare recent (7 days) vs overall (30 days)
+3. Point out exact quotes or paraphrases from customers when relevant
+4. Be actionable - suggest what the founder should pay attention to
+5. If you spot pricing questions, feature requests, or pain points, call them out with examples
+6. Compare time periods if the question implies it
+7. Be conversational, like you're a team member briefing the founder
+
+**Question Types You Handle**:
+- "What are customers asking?" → List main topics with examples
+- "What's trending?" → Compare recent vs earlier messages
+- "Any pricing questions?" → Find and quote pricing-related queries
+- "What are the pain points?" → Reference the negative feedback messages
+- "Product demand?" → Analyze what features/products customers want from messages and lead requirements
+- "Last 3 days vs before?" → Do time-based comparison
+- "Unresolved queries?" → Identify recurring questions that might not be getting good answers
+
+Give a natural, conversational 3-5 paragraph answer. Use bullet points sparingly and only for lists. Sound like a smart coworker, not a robot."""
+
         try:
             chat = LlmChat(
                 api_key=self.llm_key,
-                session_id=f"copilot_explain"
+                session_id=f"copilot_{hash(query) % 10000}"
             ).with_model("openai", "gpt-4o-mini")
             
-            prompt = f"""User asked: "{query}"
-
-Data retrieved:
-{json.dumps(data, indent=2)}
-
-Provide a natural language explanation:"""
+            explanation = await chat.send_message(UserMessage(text=analysis_prompt))
             
-            explanation = await chat.send_message(UserMessage(text=prompt))
-            return explanation
+            # Build data summary
+            satisfaction_rate = 0
+            if (data['positive_feedback'] + data['negative_feedback']) > 0:
+                satisfaction_rate = round(
+                    (data['positive_feedback'] / (data['positive_feedback'] + data['negative_feedback']) * 100),
+                    1
+                )
+            
+            data_summary = {
+                "total_conversations_30d": data['total_conversations'],
+                "total_messages_30d": data['thirty_day_count'],
+                "recent_conversations_7d": data['recent_conversations'],
+                "recent_messages_7d": data['seven_day_count'],
+                "leads_captured": len(data['leads']),
+                "satisfaction_rate": satisfaction_rate,
+                "positive_feedback": data['positive_feedback'],
+                "negative_feedback": data['negative_feedback']
+            }
+            
+            return {
+                "explanation": explanation,
+                "data": data_summary
+            }
             
         except Exception as e:
-            logger.error(f"Explanation generation error: {e}")
-            return f"Here's what I found: {json.dumps(data)}"
+            logger.error(f"LLM analysis error: {e}")
+            # Fallback to simpler response
+            return {
+                "explanation": f"Based on analyzing {data['thirty_day_count']} customer messages over the last 30 days, I can see your customers are actively engaging with your chatbot. You've had {data['total_conversations']} conversations, with {data['recent_conversations']} in the last week. To get specific insights, try asking: 'What are the most common questions?' or 'Are there any pricing concerns?' or 'What are customers saying recently?'",
+                "data": {
+                    "total_messages": data['thirty_day_count'],
+                    "recent_messages": data['seven_day_count'],
+                    "total_conversations": data['total_conversations']
+                }
+            }
